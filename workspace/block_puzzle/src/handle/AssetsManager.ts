@@ -33,7 +33,7 @@ export class AssetLoader{
             block_4: "assets/atlases/spr_block_4.png",
             block_5: "assets/atlases/spr_block_5.png",
             block_6: "assets/atlases/spr_block_6.png",
-            block_7:"assets/atlases/spr_block_7.png",
+            block_7: "assets/atlases/spr_block_7.png",
             block_hightlight:"assets/atlases/spr_block_highlight.png",
             block_bomb: "assets/atlases/spr_bomb.png",
             block_border: "assets/atlases/spr_border.png"
@@ -126,5 +126,10 @@ export class AssetLoader{
             }
         }
         await Promise.all(loadSpritePromise);
+    }
+    private static async sounds(): Promise<void>{
+        // const audios = {
+            
+        // }
     }
 }

@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { AnimatedSprite, Application, Assets, Sprite } from "pixi.js";
-import { AssetLoader } from "./assets/AssetLoader";
+import { AssetLoader } from "./handle/AssetsManager";
 import { SceneManager } from "./handle/SceneManager";
 import { GameScene } from "./scenes/GameScene";
 

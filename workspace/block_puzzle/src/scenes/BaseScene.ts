@@ -7,4 +7,7 @@ export abstract class BaseScene extends Container{
     }
     abstract init(): void;
     abstract destroyScene(): void;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    public onResize(width: number, height: number): void{
+    }
 }

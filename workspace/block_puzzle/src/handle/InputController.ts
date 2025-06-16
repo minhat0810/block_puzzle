@@ -13,18 +13,18 @@ export class InputController {
     target.on("pointermove", this.onPointerMove.bind(this));
   }
 
-  private onPointerDown(e: FederatedPointerEvent) {
+  private onPointerDown(event: FederatedPointerEvent) {
     this.isDown = true;
-    this.pointerPos.copyFrom(e.global);
+    this.pointerPos.copyFrom(event.global);
   }
 
-  private onPointerUp(e: FederatedPointerEvent) {
+  private onPointerUp(event: FederatedPointerEvent) {
     this.isDown = false;
-    this.pointerPos.copyFrom(e.global);
+    this.pointerPos.copyFrom(event.global);
   }
 
-  private onPointerMove(e: FederatedPointerEvent) {
-    this.pointerPos.copyFrom(e.global);
+  private onPointerMove(event: FederatedPointerEvent) {
+    this.pointerPos.copyFrom(event.global);
   }
 
   public isPointerPressed(): boolean {

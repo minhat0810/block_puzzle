@@ -1,5 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { Assets } from "pixi.js";
+import {sound} from "@pixi/sound";
 
 /* eslint-disable prettier/prettier */
 export class AssetLoader{
@@ -12,7 +13,8 @@ export class AssetLoader{
             this.loadBlock(),
             this.loadButton(),
             this.loadUI(),
-            this.loadAnimationJewel()
+            this.loadAnimationJewel(),
+            this.sounds()
         ])
     }
     private static async loadBackground(): Promise<void>{
@@ -128,8 +130,22 @@ export class AssetLoader{
         await Promise.all(loadSpritePromise);
     }
     private static async sounds(): Promise<void>{
-        // const audios = {
-            
-        // }
+        const audios = {
+            click : "assets/audios/sfx_btn_click.mp3",
+            game_over: "assets/audios/sfx_game_over.mp3",
+            game_win : "assets/audios/sfx_game_win.mp3",
+            hit1: "assets/audios/sfx_hit1.mp3",
+            hit2: "assets/audios/sfx_hit2.mp3",
+            hit3: "assets/audios/sfx_hit3.mp3",
+            hit4: "assets/audios/sfx_hit4.mp3",
+            hit5: "assets/audios/sfx_hit5.mp3",
+            hit6: "assets/audios/sfx_hit6.mp3",
+            lose: "assets/audios/sfx_lose.mp3",
+            put: "assets/audios/sfx_put.mp3",
+            select: "assets/audios/sfx_select.mp3",
+        };
+        for(const [alias,path] of Object.entries(audios)){
+            sound.add(alias,path);
+        }
     }
 }

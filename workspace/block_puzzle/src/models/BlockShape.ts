@@ -108,4 +108,5 @@ export class BlockShapeLibrary{
         const index = Math.floor(Math.random()*this.SHAPES.length);
         return this.SHAPES[index];
     }
+
 }

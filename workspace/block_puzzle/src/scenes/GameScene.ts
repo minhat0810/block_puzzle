@@ -134,7 +134,7 @@ export class GameScene extends BaseScene{
         const space = app.screen.width * 0.05; 
         const startX = app.screen.width * 0.435;
         const startY = app.screen.height*0.9;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        
         const textureList = ["block_1", "block_2", "block_3", "block_4","block_5", "block_6"];
         for( let i=0; i<3; i++){
             const matrix = BlockShapeLibrary.getRamdomShape();

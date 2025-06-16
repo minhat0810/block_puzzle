@@ -46,7 +46,7 @@ export class BlockPickManager {
     // block.on("pointercancel", () => this.onPickEnd());
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   private onDragStart(block: Blocks, event: FederatedPointerEvent): void {
     this.selectedBlock = block;
     console.log(this.selectedBlock.shapeSize);

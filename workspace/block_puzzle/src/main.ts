@@ -1,9 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prettier/prettier */
-import { AnimatedSprite, Application, Assets, Sprite } from "pixi.js";
+import { Application, Assets, Sprite } from "pixi.js";
 import { AssetLoader } from "./handle/AssetsManager";
 import { SceneManager } from "./handle/SceneManager";
 import { GameScene } from "./scenes/GameScene";
-import {sound} from "@pixi/sound";
 (async () => {
   // Create a new application
   const app = new Application();
@@ -64,7 +64,7 @@ import {sound} from "@pixi/sound";
   
 
   // Listen for animate update
-  app.ticker.add((time) => {
-    // console.log(time.deltaTime);
-  });
+  // app.ticker.add((time) => {
+  //   // console.log(time.deltaTime);
+  // });
 })();

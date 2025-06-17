@@ -13,13 +13,13 @@ export class GameScene extends BaseScene{
     private originalScale = 1;
     private originalPos = { x: 0, y: 0 };
     private isPicked   = false;
-    private blockSize !: number;
-    private gridCols  !: number;
-    private gridRows  !: number;
+    public  blockSize !: number;
+    public  gridSize : number = 8;
     private headerContainer     !: Container;
     private bodyContainer       !: Container;
     private pickFooterContainer !: Container;
     private worldTileContainer  !: Container;
+    public  blockGrid            : { x: number, y: number } [][] = [];
     constructor(){
         super();
     }
@@ -27,13 +27,10 @@ export class GameScene extends BaseScene{
         const app = SceneManager.getApp();
         const offsetYTop = -app.screen.height*0.4;
         const offsetYBottom = -app.screen.height*0.01;
-        
         this.headerContainer     = this.header(offsetYTop,app);
         this.bodyContainer       = this.body(offsetYBottom,app);
         this.pickFooterContainer = this.pickFooter(offsetYTop,app);
-        console.log(app.screen.width*0.033);
-        
-        this.worldTileContainer  = this.worldTile(50,8,8,offsetYBottom,app);
+        this.worldTileContainer  = this.worldTile(50,this.gridSize,offsetYBottom,app);
 
         this.blockPickManager  = new BlockPickManager(this,app);
 
@@ -91,8 +88,7 @@ export class GameScene extends BaseScene{
         const brgMapPickS = new Sprite(brgMapPickT);
         // brgMapPickS.scale.x = 0.4;
         // brgMapPickS.scale.y = 0.1;
-        brgMapPickS.width = Math.max(app.screen.width*0.3,350);
-        console.log(brgMapPickS.width);
+        brgMapPickS.width = Math.round(Math.max(app.screen.width*0.3,350));
         
         brgMapPickS.height = app.screen.height*0.15;
         brgMapPickS.x = app.screen.width/2;
@@ -101,28 +97,29 @@ export class GameScene extends BaseScene{
         pickFooter.addChild(brgMapPickS);
         return pickFooter;
     }
-    private worldTile(blockSize: number, rows: number, cols: number,offsetYBottom: number,app: Application):Container{
+    private worldTile(blockSize: number, gridSize: number,offsetYBottom: number,app: Application):Container{
         const tileLayer = new Container();
         
-        const gridOffsetX  = app.screen.width/2 - (cols*blockSize)/2;
-        const gridOffsetY = app.screen.height / 2 + offsetYBottom - (rows * blockSize) / 2;
+        const gridOffsetX  = Math.round(app.screen.width/2 - (gridSize*blockSize)/2);
+        const gridOffsetY = Math.round(app.screen.height / 2 + offsetYBottom - (gridSize * blockSize) / 2);  
         this.blockSize = blockSize;
-        this.gridCols = cols;
-        this.gridRows = rows;
-        
-        // console.log(gridOffsetX,gridOffsetY);
         
 
-        for(let row = 0 ; row<rows; row++){
-            for(let col = 0 ; col<cols; col++){
+        for(let row = 0 ; row<gridSize; row++){
+            for(let col = 0 ; col<gridSize; col++){
                 const tileT = Assets.get("block_7");
                 const tileS = new Sprite(tileT);
 
                 tileS.width = blockSize;
                 tileS.height = blockSize;
 
-                tileS.x = gridOffsetX + col * blockSize;
-                tileS.y = gridOffsetY + row * blockSize;
+                tileS.x = Math.round(gridOffsetX + col * blockSize);
+                tileS.y = Math.round(gridOffsetY + row * blockSize);
+
+                if(!this.blockGrid[row]) this.blockGrid[row] = [];
+                this.blockGrid[row][col] = {x: tileS.x , y: tileS.y}
+               // console.log(this.blockGrid);
+                
 
                 tileLayer.addChild(tileS);
             }
@@ -133,7 +130,7 @@ export class GameScene extends BaseScene{
         const shapeSize = 20;
         const space = app.screen.width * 0.05; 
         const startX = app.screen.width * 0.435;
-        const startY = app.screen.height*0.9;
+        const startY = app.screen.height;
         
         const textureList = ["block_1", "block_2", "block_3", "block_4","block_5", "block_6"];
         for( let i=0; i<3; i++){
@@ -142,9 +139,6 @@ export class GameScene extends BaseScene{
             const block = new Blocks(matrix, texture, shapeSize);
             block.x = startX + i*(shapeSize+space);
             block.y = startY;
-        //    console.log(block.x,block.y);
-
-         //   block.setSize(shapeWidth);
             this.addChild(block);
             this.blockPickManager.addBlock(block);
         }
@@ -186,7 +180,7 @@ export class GameScene extends BaseScene{
         this.blockSize = newBlockSize;
 
         this.removeChild(this.worldTileContainer);
-        this.worldTileContainer = this.worldTile(newBlockSize, this.gridRows, this.gridCols, offsetYBottom, app);
+        this.worldTileContainer = this.worldTile(newBlockSize, this.gridSize, offsetYBottom, app);
         this.addChild(this.worldTileContainer);
 
        

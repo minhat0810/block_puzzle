@@ -8,6 +8,7 @@ export class Blocks extends Container{
     private texture: string;
     public originalX: number;
     public originalY: number;
+    public isSnapped: boolean = false;
     constructor(matrix: BlockShape, texture : string, shapeSize: number){
         super();
         this.shapeSize = shapeSize;
@@ -27,15 +28,13 @@ export class Blocks extends Container{
                     tile.width = this.shapeSize ;
                     tile.height = this.shapeSize ;
                     tile.x = col * this.shapeSize ;
-                    tile.y = row * this.shapeSize ;               
+                    tile.y = row * this.shapeSize ; 
                     this.addChild(tile);
                 }
             }
         }
-    this.pivot.x = this.width / 2;
-    this.pivot.y = this.height+50;
- 
-    
+        // this.pivot.x = (this.matrix[0].length * this.shapeSize);
+        // this.pivot.y = this.matrix.length * this.shapeSize;
     }
     public reSize(newSize: number){
         this.shapeSize = newSize;

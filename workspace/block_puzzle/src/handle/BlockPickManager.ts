@@ -3,7 +3,8 @@
 import { Application, Container, FederatedPointerEvent } from "pixi.js";
 import { Blocks } from "../models/Blocks";
 import { sound } from "@pixi/sound";
-import { GameScene } from "../scenes/GameScene";
+// import { GameScene } from "../scenes/GameScene";
+import { WorldMap } from "../models/WorldMap";
 
 export class BlockPickManager {
   private container: Container;
@@ -15,6 +16,9 @@ export class BlockPickManager {
   private isPick = false;
   private app: Application;
   private hasPlayedClickSound = false;
+  private onDragMoveEvent ?: ( event : FederatedPointerEvent) => void;
+  private snappedCount = 0;
+  private onResetCallBack ?: () => void;
   // private isValid = true;
 
   constructor(container: Container,app: Application) {
@@ -27,51 +31,47 @@ export class BlockPickManager {
     this.pickBlock.push(block);
     this.app.stage.eventMode = "static";
     this.app.stage.hitArea = this.app.screen;
-    // this.app.stage.on('pointerup', this.onDragEnd);
-    // this.app.stage.on('pointerupoutside', this.onDragEnd);
     this.attachEvents(block);
   }
 
   private attachEvents(block: Blocks): void {
     block.eventMode = "static";
     block.cursor = "pointer";
-
     block.on("pointerdown", (event: FederatedPointerEvent) => {
+      if (block.isSnapped) return;
       this.onDragStart(block, event);
       requestAnimationFrame(() => {
         sound.play("click");
       });
     });
   
-    // block.on("pointermove", (event: FederatedPointerEvent) => this.onPickMove(block, event));
     block.on("pointerup", () => this.onDragEnd());
     block.on("pointerupoutside", () => this.onDragEnd());
-    // block.on("pointercancel", () => this.onPickEnd());
   }
 
 
   private onDragStart(block: Blocks, event: FederatedPointerEvent): void {
     this.selectedBlock = block;
-    // console.log(this.selectedBlock.shapeSize);
-    
+
     const global = event.global;
     this.offsetX = global.x - block.x;
     this.offsetY = global.y - block.y;
     block.reSize(50);
     block.saveOriginalPosition(block.x,block.y);
     this.isPick = true;
-    this.app.stage.on("pointermove",() => this.onDragMove(block,event));
-    // block.width = 50;
-    // block.height = 50;
-    // // Tính offset từ vị trí chuột đến tâm block
-
-    // this.container.addChild(block);
+    this.onDragMoveEvent = (event: FederatedPointerEvent) => this.onDragMove(block,event);
+    this.app.stage.on("pointermove",this.onDragMoveEvent);
   }
-//, 
   private onDragMove(block: Blocks,event: FederatedPointerEvent): void {
-    if (this.selectedBlock !== block || !this.isPick) return;
-    this.selectedBlock.parent.toLocal(event.global,undefined,this.selectedBlock.position);
-    const snapPos = this.getSnapBlockPos(this.selectedBlock.x, this.selectedBlock.y);
+    if (this.selectedBlock !== block || !this.isPick ) return;
+
+    console.log(this.selectedBlock);
+    
+    const localPos = this.selectedBlock.parent.toLocal(event.global);
+
+    this.selectedBlock.position.set(Math.round(localPos.x-this.offsetX) , Math.round(localPos.y-this.offsetY));
+    
+    const snapPos = this.getSnapBlockPos(Math.round(this.selectedBlock.x),Math.round( this.selectedBlock.y));
     if (snapPos) {
         if (!this.snapPreview) {
             this.snapPreview = new Blocks(block.getShape(), block['texture'], 50);
@@ -90,56 +90,81 @@ export class BlockPickManager {
   }
 
   private onDragEnd(): void {
-    // if(this.selectedBlock){
-    //   const placed = false;
-    //   if(!placed){
-    //     this.selectedBlock.reSize(20);
-    //     this.selectedBlock.resetToOriginalPosition();
-    //   }
-    //   this.selectedBlock.alpha = 1;
-    // }
-    // this.selectedBlock = null;
-    // this.isPick = false;
+    if(this.onDragMoveEvent){
+      this.app.stage.off("pointermove", this.onDragMoveEvent);
+      this.onDragMoveEvent = undefined;
+    }
     if (!this.selectedBlock) return;
     const pos =  this.getSnapBlockPos(this.selectedBlock.x, this.selectedBlock.y);
+    const scene = this.container as WorldMap;
+
     if(pos){
       this.selectedBlock.position.set(Math.round(pos.x),Math.round( pos.y));
-      console.log(this.selectedBlock.x, this.selectedBlock.y);
+      this.selectedBlock.isSnapped = true;
+
+      const shape = this.selectedBlock.getShape();
+      const shapeRow = shape.length;
+      const shapeCol = shape[0].length;
+      const blockSize = scene.blockSize;
+
+      const startRow = Math.floor((pos.y - scene.gridOffsetY)/blockSize);
+      const startCol = Math.floor((pos.x - scene.gridOffsetX) / blockSize);
+      
+      this.snappedCount++;
+      
+
+      for (let i = 0; i < shapeRow; i++) {
+        for (let j = 0; j < shapeCol; j++) {
+          if (shape[i][j] === 1) {
+            scene.blockGrid[startRow + i][startCol + j].occupied = true;
+          }
+        }
+      }
+      if (this.snapPreview) {
+        this.snapPreview.destroy();
+        this.snapPreview = null;
+      }
+      if(this.snappedCount >= 3 && this.onResetCallBack){
+        this.snappedCount = 0;
+        this.onResetCallBack();
+      }
     } else {
        this.selectedBlock.reSize(20);
        this.selectedBlock.resetToOriginalPosition(); // trả về chỗ cũ nếu sai
-       
-      
     }
     this.selectedBlock.alpha = 1;
     this.selectedBlock = null;
     this.isPick = false;
   }
-    private getSnapBlockPos(x: number, y: number): { x: number, y: number } | null {
-    const scene = this.container as GameScene;
-    const blockSize = scene.blockSize;
-
+  private getSnapBlockPos(x: number, y: number): { x: number, y: number } | null {
+    
     if (!this.selectedBlock) return null;
+    
+    const scene = this.container as WorldMap;
+    const blockSize = scene.blockSize;
 
     const shape = this.selectedBlock.getShape();
     const shapeRow = shape.length;
     const shapeCol = shape[0].length;
 
-    // Ước lượng góc trên bên trái của khối dựa trên vị trí tâm
-    const topLeftX = x - shapeCol * blockSize / 2;
-    const topLeftY = y - shapeRow * blockSize / 2;
-
+    //Góc trên trái khối dựa trên vị trí tâm // tính vị trí của block
+    const locX = x ;
+    const locY = y ;
+    
     for (let row = 0; row <= scene.gridSize - shapeRow; row++) {
       for (let col = 0; col <= scene.gridSize - shapeCol; col++) {
         let isValid = true;
-
         for (let i = 0; i < shapeRow; i++) {
           for (let j = 0; j < shapeCol; j++) {
             if (shape[i][j] === 1) {
               const gridCell = scene.blockGrid[row + i][col + j];
+              if (gridCell.occupied) {
+                isValid = false;
+                break;
+              }
 
-              const expectedX = topLeftX + j * blockSize + blockSize / 2;
-              const expectedY = topLeftY + i * blockSize + blockSize / 2;
+              const expectedX = locX + j * blockSize;
+              const expectedY = locY + i * blockSize;
 
               const cellLeft = gridCell.x - blockSize / 2;
               const cellRight = gridCell.x + blockSize / 2;
@@ -168,10 +193,9 @@ export class BlockPickManager {
         }
       }
     }
-
     return null;
   }
-
-  
-  
+  public setResetCallBack(callback: ()=>void){
+    this.onResetCallBack = callback;
+  }
 }

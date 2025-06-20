@@ -115,7 +115,7 @@ export class AssetLoader{
         )
     }
     private static async loadAnimationJewel(): Promise<void>{
-        const colors = ["cyan", "green", "orange","pink","purple","red"];
+        const colors = ["pink", "purple", "cyan", "green", "orange", "red"];
 
         const loadSpritePromise = [];
 

@@ -1,5 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { Application, Assets, Container, Sprite } from "pixi.js";
+import { Blocks } from "./Blocks";
 
 export class WorldMap extends Container{
     public gridSize: number = 8;
@@ -8,7 +9,7 @@ export class WorldMap extends Container{
     public app: Application;
     public gridOffsetX: number;
     public gridOffsetY : number;
-    public blockGrid:{x: number, y: number; occupied: boolean }[][] = [];  
+    public blockGrid:{x: number, y: number; occupied: boolean, sprite: Sprite, blockRef: Blocks| null,parentBlockPos?:{ x: number; y: number }|null  }[][] = [];  
     constructor(offset: number, app: Application){
         super();
         this.offset = offset;
@@ -31,7 +32,7 @@ export class WorldMap extends Container{
                         tileS.y = Math.round(this.gridOffsetY + row * this.blockSize);
         
                         if(!this.blockGrid[row]) this.blockGrid[row] = [];
-                        this.blockGrid[row][col] = {x: tileS.x , y: tileS.y, occupied: false};
+                        this.blockGrid[row][col] = {x: tileS.x , y: tileS.y, occupied: false, sprite: tileS,blockRef: null,parentBlockPos: null};
                         
         
                         tileLayer.addChild(tileS);

@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 
-import { AnimatedSprite, Application, Assets, Container, FederatedPointerEvent, Sprite, Texture } from "pixi.js";
+import { Application, Assets, Container, FederatedPointerEvent, Sprite, Texture } from "pixi.js";
 import { Blocks } from "../models/Blocks";
 import { sound } from "@pixi/sound";
 // import { GameScene } from "../scenes/GameScene";

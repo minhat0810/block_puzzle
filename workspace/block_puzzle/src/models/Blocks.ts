@@ -40,7 +40,6 @@ export class Blocks extends Container{
                     this.addChild(tile);
                     tileRow.push(tile);
                 }else {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     tileRow.push(null as unknown as Sprite); 
                 }
             }

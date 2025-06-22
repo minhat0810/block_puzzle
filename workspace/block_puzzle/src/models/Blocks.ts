@@ -12,8 +12,9 @@ export class Blocks extends Container{
     public texture: string;
     public originalX: number;
     public originalY: number;
-    public canPick: boolean = false;
+    public canPick: boolean = true;
     public tiles: Sprite[][] = [];
+    public isActive: boolean = true;
     constructor(matrix: BlockShape, texture : string, shapeSize: number){
         super();
         this.shapeSize = shapeSize;

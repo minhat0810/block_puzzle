@@ -41,4 +41,41 @@ export class WorldMap extends Container{
             this.addChild(tileLayer);
         }
     
+  public canSnapBlock(block: Blocks) : boolean{
+      const grid = this.blockGrid;
+      const gridSize = this.gridSize;
+      const shape = block.getShape();
+      const shapeRow = shape.length;
+      const shapeCol = shape[0].length; 
+      for(let row = 0; row <= gridSize - shapeRow; row++){
+        for(let col = 0; col <= gridSize - shapeCol; col++){
+          let canSnap = true;
+          for(let i = 0; i < shapeRow; i++){
+            for(let j = 0; j< shapeCol; j++){
+              if (shape[i][j] === 1) {
+                const r = row + i;
+                const c = col + j;
+                if (
+                  r < 0 || r >= gridSize ||
+                  c < 0 || c >= gridSize ||
+                  grid[r][c].occupied
+                ) {
+                  canSnap = false;
+                  break;
+                }
+              }
+            }
+            if(!canSnap) break;
+          }
+          if (canSnap) {
+            console.log(`✅ Block '${block.texture}' có thể đặt tại row=${row}, col=${col}`);
+            return true;
+          }
+        }
+      }
+            
+      console.log(`❌ Block '${block.texture}' không thể đặt`);
+      return false;
+   }
+    
 }

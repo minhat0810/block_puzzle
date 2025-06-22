@@ -10,4 +10,5 @@ export abstract class BaseScene extends Container{
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public onResize(width: number, height: number): void{
     }
+    update?(delta: number): void;
 }

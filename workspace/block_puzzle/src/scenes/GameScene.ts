@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Application, Assets, Container, Sprite } from "pixi.js";
+import { Application, Assets, Container, Sprite, Text } from "pixi.js";
 import { BaseScene } from "./BaseScene";
 import { SceneManager } from "../handle/SceneManager";
 import { BlockShapeLibrary } from "../models/BlockShape";
@@ -18,12 +18,16 @@ export class GameScene extends BaseScene{
     public  gridSize : number = 8;
     private headerContainer     !: Container;
     private bodyContainer       !: Container;
-    private pickFooterContainer !: Container;
+    private pickFooterContainer !: Container;   
     private worldTileContainer  !: Container;
     public  blockGrid            : { x: number, y: number } [][] = [];
     public  gridOffsetX          : number = 0;
     public  gridOffsetY          : number = 0;
     private worldMap            !: WorldMap;
+    private   curScore          !: Text;
+    private   bestScore         !: Text;
+    private   currentScore      : number = 0;
+    private   bestStoreScore    : number = 0;
     constructor(){
         super();
     }
@@ -40,6 +44,14 @@ export class GameScene extends BaseScene{
         this.blockPickManager.setResetCallBack(()=>{
             this.createBlocks(app);
         })
+
+        this.blockPickManager.setScore(this.updateScoreDisplay.bind(this));
+        const storeBestScore = localStorage.getItem("block_puzzle_score");
+        if(storeBestScore){
+            this.bestStoreScore = parseInt(storeBestScore,10);
+            this.bestScore.text = `${this.bestStoreScore}`;
+        }
+
         this.addChild(this.headerContainer);
         this.addChild(this.bodyContainer);
         this.addChild(this.pickFooterContainer);
@@ -59,7 +71,35 @@ export class GameScene extends BaseScene{
         brgMapSettingS.y = app.screen.height/2 +offsetYTop;
         brgMapSettingS.anchor.set(0.5);
 
+        this.bestScore = new Text({
+            text: '0',
+            style: {
+                fill: '#ffffff',
+                fontSize: 30,
+                fontFamily: 'MyFont',
+            }
+        })
+
+        this.curScore = new Text({
+            text: '0',
+            style: {
+                fill: '#ffffff',
+                fontSize: 30,
+                fontFamily: 'MyFont',
+            }
+        })
+        this.curScore.anchor.set(0.5,0.5)
+        this.curScore.x = brgMapSettingS.x+40;
+        this.curScore.y = brgMapSettingS.y;
+
+        this.bestScore.anchor.set(0.5,0.5)
+        this.bestScore.x = brgMapSettingS.x-110;
+        this.bestScore.y = brgMapSettingS.y;
+
         header.addChild(brgMapSettingS);
+        
+        header.addChild(this.curScore);
+        header.addChild(this.bestScore);
         return header;
     }
     private body(offsetYBottom: number, app: Application): Container{
@@ -139,6 +179,33 @@ export class GameScene extends BaseScene{
     }
     destroyScene(): void {   
     }
+    private layoutHeader(width: number, height: number): void {
+        const headerBg = this.headerContainer.children[0] as Sprite;
+        headerBg.x = width / 2;
+        headerBg.y = height * 0.1;
+        headerBg.width = Math.max(width * 0.3, 350);
+        headerBg.height = height * 0.15;
+    
+        const spacing = headerBg.height * 0.25;
+    
+        this.curScore.x = this.bestScore.x = headerBg.x;
+        this.curScore.y = headerBg.y - spacing;
+        this.bestScore.y = headerBg.y + spacing;
+    }
+    private layoutBody(width: number, height: number): void {
+        const bodyBg = this.bodyContainer.children[0] as Sprite;
+        bodyBg.x = width / 2;
+        bodyBg.y = height / 2;
+        bodyBg.width = bodyBg.height = Math.max(width * 0.273, 350);
+    }
+private layoutFooter(width: number, height: number): void {
+    const footer = this.pickFooterContainer.children[0] as Sprite;
+    footer.x = width / 2;
+    footer.y = height * 0.9;
+    footer.width = Math.max(width * 0.3, 350);
+    footer.height = height * 0.15;
+}
+        
     onResize(width: number, height: number): void {
         const app = SceneManager.getApp();
         // const coefficientX = this.getScaleFactor(width,height);
@@ -192,9 +259,13 @@ export class GameScene extends BaseScene{
         }   
         // this.addChild(blocks)
     }
-    // private getScaleFactor(width: number,height: number): number {
-    //     const baseWidth = 1280;
-    //     const minScale = 0.5;
-    //     return Math.max(Math.min(width / baseWidth,0.5), minScale);
-    // }
+    public updateScoreDisplay(insSCore: number): void {
+        this.currentScore += insSCore;
+        this.curScore.text = `${this.currentScore}`;
+        if(this.currentScore>this.bestStoreScore){
+            this.bestStoreScore = this.currentScore;
+            this.bestScore.text = `${this.bestStoreScore}`;
+            localStorage.setItem("block_puzzle_score", `${this.bestStoreScore}`);
+        }
+    }
 }

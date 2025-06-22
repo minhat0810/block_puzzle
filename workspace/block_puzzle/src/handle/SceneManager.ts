@@ -10,6 +10,11 @@ export class SceneManager{
     static init(app: Application){
         this.app = app;
         window.addEventListener("resize", this.onWindowResize.bind(this));
+        // app.ticker.add((delta) =>{
+        //     if(this.currentScene && this.currentScene.update){
+        //         this.currentScene.update(delta.deltaTime);
+        //     }
+        // })
     }
     static getApp(){
         return this.app;
@@ -32,4 +37,5 @@ export class SceneManager{
           this.currentScene.onResize(window.innerWidth, window.innerHeight);
         }
     }
+    
 }

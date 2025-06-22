@@ -1,13 +1,20 @@
 /* eslint-disable prettier/prettier */
 
-import { Application, Assets, Container, FederatedPointerEvent, Sprite, Texture } from "pixi.js";
+import { AnimatedSprite, Application, Assets, Container, FederatedPointerEvent, Sprite, Texture } from "pixi.js";
 import { Blocks } from "../models/Blocks";
 import { sound } from "@pixi/sound";
 // import { GameScene } from "../scenes/GameScene";
 import { WorldMap } from "../models/WorldMap";
-// interface HighlightableTile extends Sprite {
-//   _originalTexture?: Texture;
-// }
+
+interface Cell {
+  x: number;
+  y: number;
+  occupied: boolean;
+  sprite: Sprite;
+  blockRef: Blocks | null;
+  parentBlockPos?: { x: number; y: number } | null;
+}
+
 
 export class BlockPickManager {
   private container: Container;
@@ -16,16 +23,21 @@ export class BlockPickManager {
   private snapPreview: Blocks | null = null;
   private offsetX = 0;
   private offsetY = 0;
-  private isPick = false;
   private app: Application;
   private hasPlayedClickSound = false;
   private onDragMoveEvent ?: ( event : FederatedPointerEvent) => void;
-  private snappedCount = 0;
+  private snappedCount = 3;
   private onResetCallBack ?: () => void;
   private containerWM: WorldMap;
   private lastSnapRow: number | null = null;
   private lastSnapCol: number | null = null;
   private originalTextureMap = new WeakMap<Sprite, Texture>();
+  private cellsToDes: Cell[] = [];
+  private numRCScore: { rows: number; cols: number }[] = [];
+  private remainingAnimations = 0;
+  private onScoreCallBack ?: (insSCore: number) => void;
+  private isGameOver = false;
+  
 
   // private isValid = true;
 
@@ -37,17 +49,21 @@ export class BlockPickManager {
 
 
   public addBlock(block: Blocks): void {
+    block.canPick = true; 
+    block.isActive = true; 
     this.pickBlock.push(block);
     this.app.stage.eventMode = "static";
     this.app.stage.hitArea = this.app.screen;
     this.attachEvents(block);
+    this.updateBlockVisib();
+    // this.checkGameLose();
   }
 
   private attachEvents(block: Blocks): void {
     block.eventMode = "static";
     block.cursor = "pointer";
     block.on("pointerdown", (event: FederatedPointerEvent) => {
-      if (block.canPick) return;
+      if (!block.canPick) return;
       this.onDragStart(block, event);
       requestAnimationFrame(() => {
         sound.play("click");
@@ -62,17 +78,20 @@ export class BlockPickManager {
   private onDragStart(block: Blocks, event: FederatedPointerEvent): void {
     this.selectedBlock = block;
 
+    if(block.parent){
+      block.parent.setChildIndex(block,block.parent.children.length-1);
+    }
+
     const global = event.global;
     this.offsetX = global.x - block.x;
     this.offsetY = global.y - block.y;
     block.reSize(50);
     block.saveOriginalPosition(block.x,block.y);
-    this.isPick = true;
     this.onDragMoveEvent = (event: FederatedPointerEvent) => this.onDragMove(block,event);
     this.app.stage.on("pointermove",this.onDragMoveEvent);
   }
   private onDragMove(block: Blocks,event: FederatedPointerEvent): void {
-    if (this.selectedBlock !== block || !this.isPick ) return;
+    if (this.selectedBlock !== block) return;
     
     const localPos = this.selectedBlock.parent.toLocal(event.global);
 
@@ -114,8 +133,8 @@ export class BlockPickManager {
 
     if(pos){
       this.selectedBlock.position.set(Math.round(pos.x),Math.round( pos.y));
-      this.selectedBlock.canPick = true;
-
+      this.selectedBlock.canPick = false;
+      this.selectedBlock.isActive = false;
 
 
       const shape = this.selectedBlock.getShape();
@@ -126,7 +145,7 @@ export class BlockPickManager {
       const startRow = Math.floor((pos.y - this.containerWM.gridOffsetY)/blockSize);
       const startCol = Math.floor((pos.x - this.containerWM.gridOffsetX) / blockSize);
       
-      this.snappedCount++;
+      this.snappedCount--;
       sound.play("put");
       
 
@@ -143,19 +162,20 @@ export class BlockPickManager {
         this.snapPreview.destroy();
         this.snapPreview = null;
       }
-      if(this.snappedCount >= 3 && this.onResetCallBack){
-        this.snappedCount = 0;
+      if(this.snappedCount <= 0 && this.onResetCallBack){
+        this.snappedCount = 3;
         this.onResetCallBack();
       }
       this.checkExploedLines();
+      this.updateBlockVisib();
       
     } else {
        this.selectedBlock.reSize(20);
        this.selectedBlock.resetToOriginalPosition(); // trả về chỗ cũ nếu sai
+       this.resetHighlights();
     }
     this.selectedBlock.alpha = 1;
     this.selectedBlock = null;
-    this.isPick = false;
   }
   private getSnapBlockPos(x: number, y: number): { x: number, y: number, row: number, col: number } | null {
     
@@ -332,15 +352,33 @@ export class BlockPickManager {
       if(isFull) exCols.push(col);
     }
 
+    for(const row of exRows){
+      for (let col = 0; col < size; col++) {
+      this.cellsToDes.push(grid[row][col]);
+      }
+    }
+    for (const col of exCols) {
+      for (let row = 0; row < size; row++) {
+        if (!exRows.includes(row)) {
+          this.cellsToDes.push(grid[row][col]);
+        }
+      }
+    }
+
+
     if(exCols.length || exRows.length){
-      console.log("boom");
+      this.numRCScore.push({
+        rows: exRows.length,
+        cols: exCols.length
+      });
       this.exploreBlock(exRows, exCols);
     }
     return{ rows: exRows, cols: exCols};
   }
   
   private exploreBlock(exRows: number[], exCols: number[]){
-    this.eligible(exRows, exCols, this.explore.bind(this));
+
+      this.eligible(exRows, exCols, this.explore.bind(this));
     
       const grid = this.containerWM.blockGrid;
       const gridSize = this.containerWM.gridSize;
@@ -365,41 +403,6 @@ export class BlockPickManager {
           }
         }
      }
-    //  bldestroy.forEach(blocks =>{
-    //   blocks.destroy({children: true});
-      // const colorNameMap: Record<string, string> = {
-      //   block_1: "pink",
-      //   block_2: "purple",
-      //   block_3: "cyan",
-      //   block_4: "green",
-      //   block_5: "orange",
-      //   block_6: "red",
-      // };
-      // const textureName = blocks.texture; 
-      // console.log(textureName);
-           
-      // if(textureName){
-      //   const colorName = colorNameMap[textureName];
-      //   const frames = [];
-      //   for (let i = 1; i < 10; i++) {
-      //     if (!frames) {
-      //       console.warn(" Texture jewel_green_${colorName} chưa được preload!`);
-      //       return;
-      //     }
-      //     frames.push(Assets.get(`jewel_green_${colorName}`))
-      //   }
-      //   const anim = new AnimatedSprite(frames);
-      //   anim.animationSpeed = 0.15;
-      //   anim.play();
-      //   anim.x = blocks.x;
-      //   anim.y = blocks.y;
-      //   this.app.stage.addChild(anim);     
-      //   anim.onComplete = () => {
-      //   anim.destroy();
-      //   };    
-      // }
-    //})
-    
   }
   private eligible(fullRows: number[], fullCols: number[],callback: (tile: Sprite | null, localRow: number, localCol: number) => void){
     const grid = this.containerWM.blockGrid;
@@ -428,8 +431,6 @@ export class BlockPickManager {
               if (isInBlockShape) {
                 const tile = block.tiles[localRow][localCol];
                 callback(tile, localRow, localCol);
-
-                //this.highlightEli(tile,localRow,localCol);
               }
 
           }
@@ -446,6 +447,7 @@ export class BlockPickManager {
         if (block && pos) {
           const localRow = row - pos.y;
           const localCol = col - pos.x;
+ 
     
           const isInBlockShape =
             localRow >= 0 &&
@@ -480,43 +482,105 @@ export class BlockPickManager {
     if (tile) {
       if(this.selectedBlock){
         // tile.texture = Assets.get(this.selectedBlock.texture);
-        console.log(this.selectedBlock.texture);
-        
+       // console.log(this.selectedBlock.texture);
+        const colorNameMap: Record<string, string> = {
+          block_1: "pink",
+          block_2: "purple",
+          block_3: "cyan",
+          block_4: "green",
+          block_5: "orange",
+          block_6: "red",
+        };
+        const hitSounds = ["hit1","hit2","hit3","hit4","hit5","hit6"]
+        let soundPlayed = false;
+        const textureName = this.selectedBlock.texture;
+        const colorName = colorNameMap[textureName];
+        const frames = [];
+        for (let i = 1; i < 10; i++) {
+          frames.push(Assets.get(`jewel_${colorName}_${i}`))
+        }
+        this.remainingAnimations = this.cellsToDes.length;
+
+        for (const cell of this.cellsToDes) {
+          const anim = new AnimatedSprite(frames);
+          anim.animationSpeed = 0.7;
+          anim.loop = false;
+          anim.anchor.set(0.5);
+          anim.x = cell.x ;
+          anim.y = cell.y ;
+          this.app.stage.addChild(anim);
+          anim.play();
+          
+          anim.onComplete = () => {
+
+            anim.destroy();
+            tile.destroy({children:true});
+            if (!soundPlayed) {
+              const hit = hitSounds[Math.floor(Math.random() * hitSounds.length)];
+              sound.play(hit);
+              soundPlayed = true;
+            }
+
+            this.remainingAnimations--;
+            if (this.remainingAnimations === 0) {
+              const score = this.calculateScore();
+              if(this.onScoreCallBack){
+                this.onScoreCallBack(score);
+              }
+              this.cellsToDes.length = 0;
+            }
+          };
+        }       
       }
-         tile.destroy({children:true})
+        // tile.destroy({children:true})
     } else {
       console.warn(`Không tìm thấy tile tại local[${localRow}][${localCol}]`);
     }
-  //     const colorNameMap: Record<string, string> = {
-  //       block_1: "pink",
-  //       block_2: "purple",
-  //       block_3: "cyan",
-  //       block_4: "green",
-  //       block_5: "orange",
-  //       block_6: "red",
-  //     };
-  //     const textureName = blocks.texture; 
-  //     console.log(textureName);
-           
-  //     if(textureName){
-  //       const colorName = colorNameMap[textureName];
-  //       const frames = [];
-  //       for (let i = 1; i < 10; i++) {
-  //         if (!frames) {
-  //           console.warn(" Texture jewel_green_${colorName} chưa được preload!`);
-  //           return;
-  //         }
-  //         frames.push(Assets.get(`jewel_green_${colorName}`))
-  //       }
-  //       const anim = new AnimatedSprite(frames);
-  //       anim.animationSpeed = 0.15;
-  //       anim.play();
-  //       anim.x = blocks.x;
-  //       anim.y = blocks.y;
-  //       this.app.stage.addChild(anim);     
-  //       anim.onComplete = () => {
-  //       anim.destroy();
-  //       };    
-  //     }
    }
+   private calculateScore(): number {
+    let totalScore = 0;
+
+    for (const entry of this.numRCScore) {
+      const totalLines = entry.rows + entry.cols;
+      if (totalLines > 0) {
+        totalScore += totalLines * totalLines * 10;
+      }
+    }
+
+    // Reset sau khi tính
+    this.numRCScore.length = 0;
+  
+    return totalScore;
+  }
+
+  public setScore(callback: (insScore: number)=> void): void{
+    this.onScoreCallBack = callback;
+  }
+
+
+  private updateBlockVisib(): void{
+    for (const block of this.pickBlock) {
+      if(!block.isActive) continue;
+      const canSnap = this.containerWM.canSnapBlock(block);
+      block.alpha = canSnap ? 1 : 0.3;
+      block.canPick = canSnap;
+    }
+    requestAnimationFrame(() => {
+      this.checkGameLose();
+    });
+  }
+  private checkGameLose(): void {
+    const activeBlocks = this.pickBlock.filter(b => b.isActive);
+    if (activeBlocks.length === 0) return;
+
+    // đang lỗi khi tạo mới thì toàn bộ đang ở canPick nên chưa check được
+    const allBlocked = activeBlocks.every(block => {
+      return !this.containerWM.canSnapBlock(block);
+    });
+    if (allBlocked && !this.isGameOver) {
+      this.isGameOver = true;
+      console.log(" Game Over!");
+      sound.play("lose"); 
+    }
+  }
 }

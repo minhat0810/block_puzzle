@@ -5,12 +5,14 @@ import { SceneManager } from "../handle/SceneManager";
 import { BlockShapeLibrary } from "../models/BlockShape";
 import { Blocks } from "../models/Blocks";
 // import { InputController } from "../handle/InputController";
-import { BlockPickManager } from "../handle/BlockPickManager";
+// import { BlockPickManager } from "../handle/BlockPickManager";
 import { WorldMap } from "../models/WorldMap";
+import { BlocksPick } from "../models/BlocksPick";
+import { Effects } from "../models/Effects";
 
 export class GameScene extends BaseScene{
     
-    private blockPickManager!: BlockPickManager;
+    private blockPickManager!: BlocksPick;
     private originalScale = 1;
     private originalPos = { x: 0, y: 0 };
     private isPicked   = false;
@@ -28,6 +30,8 @@ export class GameScene extends BaseScene{
     private   bestScore         !: Text;
     private   currentScore      : number = 0;
     private   bestStoreScore    : number = 0;
+    private   effectsUI         !: Effects;
+    private   effectsContainer  !: Container;
     constructor(){
         super();
     }
@@ -40,12 +44,23 @@ export class GameScene extends BaseScene{
         this.bodyContainer       = this.body(offsetYBottom,app);
         this.pickFooterContainer = this.pickFooter(offsetYTop,app);
         this.worldTileContainer  = this.worldMap;
-        this.blockPickManager  = new BlockPickManager(this.worldMap,app);
+        this.blockPickManager    = new BlocksPick(this.worldMap,app);
+  
+        this.effectsContainer = new Container();
+        this.effectsContainer.sortableChildren = true;
+        this.effectsUI = new Effects(app.stage);
+
+
         this.blockPickManager.setResetCallBack(()=>{
             this.createBlocks(app);
         })
+        this.blockPickManager.setScore((score,totalLines) => {
+            this.updateScoreDisplay(score);
+            const label = this.getScoreLabel(totalLines);
+            if(label) this.effectsUI.scoreEffect(label,app.screen.width/2,app.screen.height/2,score);
 
-        this.blockPickManager.setScore(this.updateScoreDisplay.bind(this));
+        });
+        
         const storeBestScore = localStorage.getItem("block_puzzle_score");
         if(storeBestScore){
             this.bestStoreScore = parseInt(storeBestScore,10);
@@ -57,6 +72,9 @@ export class GameScene extends BaseScene{
         this.addChild(this.pickFooterContainer);
         this.addChild(this.worldTileContainer);
         this.createBlocks(app);
+        this.addChild(this.effectsContainer);
+        this.setChildIndex(this.effectsContainer, this.children.length - 1);
+
     }
     
     private header(offsetYTop: number,app: Application): Container{
@@ -260,6 +278,8 @@ private layoutFooter(width: number, height: number): void {
         // this.addChild(blocks)
     }
     public updateScoreDisplay(insSCore: number): void {
+        console.log(this.currentScore);
+        
         this.currentScore += insSCore;
         this.curScore.text = `${this.currentScore}`;
         if(this.currentScore>this.bestStoreScore){
@@ -268,4 +288,12 @@ private layoutFooter(width: number, height: number): void {
             localStorage.setItem("block_puzzle_score", `${this.bestStoreScore}`);
         }
     }
+    private getScoreLabel(totalLines: number): string | null {
+        if (totalLines === 1) return "text";
+        if (totalLines === 2) return "cool";
+        if (totalLines === 3) return "excellent";
+        if (totalLines >= 4) return "great";
+        return null;
+      }
+      
 }

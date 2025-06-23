@@ -5,6 +5,7 @@ import { Blocks } from "../models/Blocks";
 import { sound } from "@pixi/sound";
 // import { GameScene } from "../scenes/GameScene";
 import { WorldMap } from "../models/WorldMap";
+import { InputController } from "../handle/InputController";
 
 interface Cell {
   x: number;
@@ -16,7 +17,7 @@ interface Cell {
 }
 
 
-export class BlockPickManager {
+export class BlocksPick {
   private container: Container;
   private pickBlock: Blocks[] = [];
   private selectedBlock: Blocks | null = null;
@@ -35,16 +36,16 @@ export class BlockPickManager {
   private cellsToDes: Cell[] = [];
   private numRCScore: { rows: number; cols: number }[] = [];
   private remainingAnimations = 0;
-  private onScoreCallBack ?: (insSCore: number) => void;
+  private onScoreCallBack ?: (insSCore: number, totalLines: number) => void;
   private isGameOver = false;
+  private inputController : InputController;
   
-
-  // private isValid = true;
-
   constructor(container: Container,app: Application) {
     this.container = container;
     this.app = app;
     this.containerWM = this.container as WorldMap;
+    this.inputController = new InputController(app.stage);
+    app.ticker.add(this.update, this);
   }
 
 
@@ -56,22 +57,17 @@ export class BlockPickManager {
     this.app.stage.hitArea = this.app.screen;
     this.attachEvents(block);
     this.updateBlockVisib();
-    // this.checkGameLose();
   }
 
   private attachEvents(block: Blocks): void {
     block.eventMode = "static";
     block.cursor = "pointer";
     block.on("pointerdown", (event: FederatedPointerEvent) => {
-      if (!block.canPick) return;
-      this.onDragStart(block, event);
-      requestAnimationFrame(() => {
+        if (!block.canPick) return;
+        this.onDragStart(block, event);
         sound.play("click");
       });
-    });
-  
-    block.on("pointerup", () => this.onDragEnd());
-    block.on("pointerupoutside", () => this.onDragEnd());
+      
   }
 
 
@@ -82,11 +78,17 @@ export class BlockPickManager {
       block.parent.setChildIndex(block,block.parent.children.length-1);
     }
 
+    const pivotX = (block.width);
+    const pivotY = (block.height*2);
+    block.pivot.set(pivotX, pivotY);
+
     const global = event.global;
     this.offsetX = global.x - block.x;
     this.offsetY = global.y - block.y;
+
     block.reSize(50);
     block.saveOriginalPosition(block.x,block.y);
+
     this.onDragMoveEvent = (event: FederatedPointerEvent) => this.onDragMove(block,event);
     this.app.stage.on("pointermove",this.onDragMoveEvent);
   }
@@ -129,7 +131,15 @@ export class BlockPickManager {
       this.onDragMoveEvent = undefined;
     }
     if (!this.selectedBlock) return;
-    const pos =  this.getSnapBlockPos(this.selectedBlock.x, this.selectedBlock.y);
+
+    // set pivot về gốc trái rồi điều chỉnh lại vị trí
+    const pivotX = this.selectedBlock.pivot.x;
+    const pivotY = this.selectedBlock.pivot.y;
+    this.selectedBlock.pivot.set(0, 0);
+    const adjustedX = this.selectedBlock.x - pivotX;
+    const adjustedY = this.selectedBlock.y - pivotY;
+
+    const pos =  this.getSnapBlockPos(adjustedX, adjustedY);
 
     if(pos){
       this.selectedBlock.position.set(Math.round(pos.x),Math.round( pos.y));
@@ -187,9 +197,8 @@ export class BlockPickManager {
     const shapeRow = shape.length;
     const shapeCol = shape[0].length;
 
-    //Góc trên trái khối dựa trên vị trí tâm // tính vị trí của block
-    const locX = x ;
-    const locY = y ;
+    const locX = x - this.selectedBlock.pivot.x;
+    const locY = y - this.selectedBlock.pivot.y;
     
     for (let row = 0; row <= this.containerWM.gridSize - shapeRow; row++) {
       for (let col = 0; col <= this.containerWM.gridSize - shapeCol; col++) {
@@ -269,13 +278,8 @@ export class BlockPickManager {
         }
       }
     }
-     const { rows: fullRows, cols: fullCols} = this.mapForHighlight(tempMap);
-     this.eligible(fullRows,fullCols,this.highlightEli.bind(this));
-    //  console.log(fullCols, fullRows);
-     
-    // console.log(fullRows,fullCols);
-    
-    
+    const { rows: fullRows, cols: fullCols} = this.mapForHighlight(tempMap);
+    this.eligible(fullRows,fullCols,this.highlightEli.bind(this));
 }
 
   private mapForHighlight(map: boolean[][]): { rows: number[], cols: number[] } {
@@ -315,8 +319,6 @@ export class BlockPickManager {
             localCol >= 0 &&
             localRow < block.tiles.length &&
             localCol < block.tiles[localRow]?.length;
-           // console.log(isInBlockShape);
-            
   
           if (isInBlockShape) {
             const tile = block.tiles[localRow][localCol];
@@ -523,9 +525,9 @@ export class BlockPickManager {
 
             this.remainingAnimations--;
             if (this.remainingAnimations === 0) {
-              const score = this.calculateScore();
+              const {score, totalLines} = this.calculateScore();
               if(this.onScoreCallBack){
-                this.onScoreCallBack(score);
+                this.onScoreCallBack(score, totalLines);
               }
               this.cellsToDes.length = 0;
             }
@@ -537,23 +539,26 @@ export class BlockPickManager {
       console.warn(`Không tìm thấy tile tại local[${localRow}][${localCol}]`);
     }
    }
-   private calculateScore(): number {
+   private calculateScore(): { score: number, totalLines: number } {
     let totalScore = 0;
-
+    let totalLines = 0;
+  
     for (const entry of this.numRCScore) {
-      const totalLines = entry.rows + entry.cols;
-      if (totalLines > 0) {
-        totalScore += totalLines * totalLines * 10;
+      const lines = entry.rows + entry.cols;
+      totalLines += lines;
+  
+      if (lines > 0) {
+        totalScore += lines * lines * 10;
       }
     }
-
-    // Reset sau khi tính
+  
     this.numRCScore.length = 0;
   
-    return totalScore;
+    return { score: totalScore, totalLines };
   }
+  
 
-  public setScore(callback: (insScore: number)=> void): void{
+  public setScore(callback: (insScore: number, totalLines: number)=> void): void{
     this.onScoreCallBack = callback;
   }
 
@@ -573,7 +578,6 @@ export class BlockPickManager {
     const activeBlocks = this.pickBlock.filter(b => b.isActive);
     if (activeBlocks.length === 0) return;
 
-    // đang lỗi khi tạo mới thì toàn bộ đang ở canPick nên chưa check được
     const allBlocked = activeBlocks.every(block => {
       return !this.containerWM.canSnapBlock(block);
     });
@@ -582,5 +586,13 @@ export class BlockPickManager {
       console.log(" Game Over!");
       sound.play("lose"); 
     }
+  }
+  private update(): void{
+    if(this.selectedBlock && this.inputController.isPointerPressed()){
+        const pos = this.inputController.getPointerPosition();
+        this.onDragMove(this.selectedBlock, {global: pos} as FederatedPointerEvent);
+    } else if (this.selectedBlock && !this.inputController.isPointerPressed()) {
+        this.onDragEnd();
+      }
   }
 }

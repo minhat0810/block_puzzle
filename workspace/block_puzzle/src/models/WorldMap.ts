@@ -24,18 +24,30 @@ export class WorldMap extends Container{
             for(let col = 0 ; col<this.gridSize; col++){
                 const tileT = Assets.get("block_7");
                 const tileS = new Sprite(tileT);
-        
+               // tileS.alpha =
                 tileS.width = this.blockSize;
                 tileS.height = this.blockSize;
         
                 tileS.x = Math.round(this.gridOffsetX + col * this.blockSize);
                 tileS.y = Math.round(this.gridOffsetY + row * this.blockSize);
+                const tileT2 = Assets.get("cell");
+                const tileS2 = new Sprite(tileT2);
+                
+                tileS2.width = this.blockSize;
+                tileS2.height = this.blockSize;
+        
+                tileS.x = Math.round(this.gridOffsetX + col * this.blockSize);
+                tileS.y = Math.round(this.gridOffsetY + row * this.blockSize);
+
+                tileS2.x = Math.round(this.gridOffsetX + col * this.blockSize);
+                tileS2.y = Math.round(this.gridOffsetY + row * this.blockSize);
         
                 if(!this.blockGrid[row]) this.blockGrid[row] = [];
                 this.blockGrid[row][col] = {x: tileS.x , y: tileS.y, occupied: false, sprite: tileS,blockRef: null,parentBlockPos: null};
 
-        
+              
                 tileLayer.addChild(tileS);
+                tileLayer.addChild(tileS2)
             }
           }
           this.addChild(tileLayer);

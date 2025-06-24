@@ -28,15 +28,30 @@ export class GameScene extends BaseScene{
     private worldMap            !: WorldMap;
     private   curScore          !: Text;
     private   bestScore         !: Text;
-    private   currentScore      : number = 0;
-    private   bestStoreScore    : number = 0;
+    public    currentScore      : number = 0;
+    public    bestStoreScore    : number = 0;
     private   effectsUI         !: Effects;
     private   effectsContainer  !: Container;
+
+    private headerBg            !: Sprite;
+    private settingBtn          !: Sprite;
+    private scoreGroup          !: Container;
+    private settingContainer    !: Container;
+    private gridBlockContainer  !: Container;
+    private pickBlockContainer  !: Container;
+    private btnGroup            !: Container;
+
+    private isPaused             : boolean = false;
     constructor(){
         super();
     }
     init(): void {
         const app = SceneManager.getApp();
+        const bgrTexture = Assets.get("bgr");
+        const brgSprite = new Sprite(bgrTexture);
+        brgSprite.position.set(0, 0);
+        brgSprite.width = app.screen.width;
+        brgSprite.height = app.screen.height;
         const offsetYTop = -app.screen.height*0.4;
         const offsetYBottom = -app.screen.height*0.01;
         this.worldMap = new WorldMap(offsetYBottom,app);
@@ -44,12 +59,12 @@ export class GameScene extends BaseScene{
         this.bodyContainer       = this.body(offsetYBottom,app);
         this.pickFooterContainer = this.pickFooter(offsetYTop,app);
         this.worldTileContainer  = this.worldMap;
-        this.blockPickManager    = new BlocksPick(this.worldMap,app);
-  
+        this.blockPickManager    = new BlocksPick(this.worldMap,app,this);
         this.effectsContainer = new Container();
         this.effectsContainer.sortableChildren = true;
         this.effectsUI = new Effects(app.stage);
-
+        this.gridBlockContainer = new Container();
+        this.pickBlockContainer = new Container();
 
         this.blockPickManager.setResetCallBack(()=>{
             this.createBlocks(app);
@@ -60,64 +75,86 @@ export class GameScene extends BaseScene{
             if(label) this.effectsUI.scoreEffect(label,app.screen.width/2,app.screen.height/2,score);
 
         });
-        
-        const storeBestScore = localStorage.getItem("block_puzzle_score");
+
+        const storeBestScore = 0;
         if(storeBestScore){
             this.bestStoreScore = parseInt(storeBestScore,10);
             this.bestScore.text = `${this.bestStoreScore}`;
         }
 
+        
+        this.addChild(brgSprite);
         this.addChild(this.headerContainer);
         this.addChild(this.bodyContainer);
         this.addChild(this.pickFooterContainer);
         this.addChild(this.worldTileContainer);
-        this.createBlocks(app);
+        this.createBlocks(app)
+        this.addChild(this.gridBlockContainer);
+        this.addChild(this.pickBlockContainer);
         this.addChild(this.effectsContainer);
         this.setChildIndex(this.effectsContainer, this.children.length - 1);
-
+        this.settingOverlay(app);
     }
     
     private header(offsetYTop: number,app: Application): Container{
 
         const header = new Container();
 
-        const brgMapSettingT = Assets.get("top_enless");
-        const brgMapSettingS = new Sprite(brgMapSettingT);
-        brgMapSettingS.width = Math.max(app.screen.width*0.3,350);
-        brgMapSettingS.height = app.screen.height*0.15;
-        brgMapSettingS.x = app.screen.width/2;
-        brgMapSettingS.y = app.screen.height/2 +offsetYTop;
-        brgMapSettingS.anchor.set(0.5);
-
+        // Header background
+        this.headerBg = new Sprite(Assets.get("top_enless"));
+        this.headerBg.anchor.set(0.5);
+        header.addChild(this.headerBg);
+        
+        // Score group
         this.bestScore = new Text({
             text: '0',
-            style: {
-                fill: '#ffffff',
-                fontSize: 30,
-                fontFamily: 'MyFont',
+            style: {fill: '#ffffff',fontSize: 30,fontFamily: 'Robo',
             }
         })
 
         this.curScore = new Text({
             text: '0',
-            style: {
-                fill: '#ffffff',
-                fontSize: 30,
-                fontFamily: 'MyFont',
+            style: {fill: '#ffffff',fontSize: 30,fontFamily: 'Robo',
             }
         })
         this.curScore.anchor.set(0.5,0.5)
-        this.curScore.x = brgMapSettingS.x+40;
-        this.curScore.y = brgMapSettingS.y;
-
         this.bestScore.anchor.set(0.5,0.5)
-        this.bestScore.x = brgMapSettingS.x-110;
-        this.bestScore.y = brgMapSettingS.y;
 
-        header.addChild(brgMapSettingS);
+        this.scoreGroup = new Container();
+        this.scoreGroup.addChild(this.bestScore, this.curScore);
+        header.addChild(this.scoreGroup);
+
+        // btn
+        this.settingBtn = new Sprite(Assets.get("btn_setting"));
+        this.settingBtn.anchor.set(0.5);
+        this.settingBtn.width = 50;
+        this.settingBtn.height = 50;
+        this.settingBtn.eventMode = "static";
+        this.settingBtn.cursor = "pointer";
+        this.settingBtn.on("pointermove", () =>{
+            this.settingBtn.alpha = 0.7;
+        })
+        this.settingBtn.on("pointerout", ()=>{
+            this.settingBtn.alpha = 1;
+        })
+
+        this.settingBtn.on("click", () =>{
+            this.showSettingOverlay();
+        })
+        header.addChild(this.settingBtn);
+
+        this.layoutHeader(app.screen.width, app.screen.height, offsetYTop);
         
-        header.addChild(this.curScore);
-        header.addChild(this.bestScore);
+        // const settingTexture = Assets.get("btn_setting");
+        // const settingSprite  = new Sprite(settingTexture);
+        // settingSprite.x = brgMapSettingS.width*0.5 + brgMapSettingS.x;
+        // settingSprite.anchor.set(0.5,0.5);
+        // settingSprite.setSize(50,50)
+        // header.addChild(brgMapSettingS);
+        
+        // header.addChild(this.curScore);
+        // header.addChild(this.bestScore);
+        // header.addChild(settingSprite);
         return header;
     }
     private body(offsetYBottom: number, app: Application): Container{
@@ -130,6 +167,7 @@ export class GameScene extends BaseScene{
          brgMapSprite.x = app.screen.width/2;
          brgMapSprite.y = app.screen.height/2 + offsetYBottom;
          brgMapSprite.anchor.set(0.5);
+         brgMapSprite.alpha = 0.5;
  
          body.addChild(brgMapSprite);
          return body;
@@ -190,25 +228,36 @@ export class GameScene extends BaseScene{
             const block = new Blocks(matrix, texture, shapeSize);
             block.x = startX + i*(shapeSize+space);
             block.y = startY;
-            this.addChild(block);
+            this.pickBlockContainer.addChild(block);
             this.blockPickManager.addBlock(block); 
         }
         
     }
     destroyScene(): void {   
     }
-    private layoutHeader(width: number, height: number): void {
-        const headerBg = this.headerContainer.children[0] as Sprite;
-        headerBg.x = width / 2;
-        headerBg.y = height * 0.1;
-        headerBg.width = Math.max(width * 0.3, 350);
-        headerBg.height = height * 0.15;
-    
-        const spacing = headerBg.height * 0.25;
-    
-        this.curScore.x = this.bestScore.x = headerBg.x;
-        this.curScore.y = headerBg.y - spacing;
-        this.bestScore.y = headerBg.y + spacing;
+    private layoutHeader(width: number, height: number, offsetYTop: number): void {
+        const centerX = width/2;
+        const centerY = height / 2 + offsetYTop;
+        const headerWidth = Math.max(width * 0.3, 350);
+        const headerHeight = height * 0.15;
+
+        this.headerBg.width = headerWidth;
+        this.headerBg.height = headerHeight;
+        this.headerBg.x = centerX;
+        this.headerBg.y = centerY;
+
+        this.settingBtn.x = centerX + headerWidth / 2 * 0.7;
+        this.settingBtn.y = centerY;
+
+        const spacing = headerWidth * 0.25;
+        this.scoreGroup.x = centerX ; 
+        this.scoreGroup.y = centerY;
+
+        this.bestScore.x = -spacing;
+        this.bestScore.y = 0;
+
+        this.curScore.x = +spacing -70;
+        this.curScore.y = 0;
     }
     private layoutBody(width: number, height: number): void {
         const bodyBg = this.bodyContainer.children[0] as Sprite;
@@ -216,14 +265,98 @@ export class GameScene extends BaseScene{
         bodyBg.y = height / 2;
         bodyBg.width = bodyBg.height = Math.max(width * 0.273, 350);
     }
-private layoutFooter(width: number, height: number): void {
-    const footer = this.pickFooterContainer.children[0] as Sprite;
-    footer.x = width / 2;
-    footer.y = height * 0.9;
-    footer.width = Math.max(width * 0.3, 350);
-    footer.height = height * 0.15;
-}
+    private layoutFooter(width: number, height: number): void {
+        const footer = this.pickFooterContainer.children[0] as Sprite;
+        footer.x = width / 2;
+        footer.y = height * 0.9;
+        footer.width = Math.max(width * 0.3, 350);
+        footer.height = height * 0.15;
+    }
         
+   
+    public updateScoreDisplay(insSCore: number): void {
+        console.log(this.currentScore);
+        
+        this.currentScore += insSCore;
+        this.curScore.text = `${this.currentScore}`;
+        if(this.currentScore>this.bestStoreScore){
+            this.bestStoreScore = this.currentScore;
+            this.bestScore.text = `${this.bestStoreScore}`;
+         //   localStorage.setItem("block_puzzle_score", `${this.bestStoreScore}`);
+        }
+    }
+    private getScoreLabel(totalLines: number): string | null {
+        if (totalLines === 1) return "text";
+        if (totalLines === 2) return "cool";
+        if (totalLines === 3) return "excellent";
+        if (totalLines >= 4) return "great";
+        return null;
+    }
+    private settingOverlay(app : Application): void{
+        this.settingContainer = new Container();
+        this.settingContainer.visible = false;
+        this.settingContainer.eventMode = "static";
+        this.settingContainer.sortableChildren = true;
+        
+        const bgr = new Sprite(Assets.get("bgr_settings"));
+        bgr.width = app.screen.width*0.9;
+        bgr.height = app.screen.height*0.95;
+        bgr.position.set(app.screen.width/2,app.screen.height/2)
+        bgr.anchor.set(0.5,0.5);
+        bgr.alpha = 0.9;
+
+        const continueBtn = new Sprite(Assets.get("btn_next"));
+        continueBtn.setSize(100,100);
+        continueBtn.x = bgr.x;
+        continueBtn.y = bgr.y-100;
+        continueBtn.anchor.set(0.5,0.5)
+        continueBtn.eventMode = "static";
+        continueBtn.cursor = "pointer";
+        continueBtn.on("click", ()=>{
+            this.hideSettingOverlay();
+        });
+
+        const spacing = app.screen.width * 0.1;
+
+        const btnReplay = new Sprite(Assets.get("btn_replay_2"));   
+        btnReplay.x = bgr.x - spacing;
+        btnReplay.y = bgr.y + 100;
+        btnReplay.anchor.set(0.5,0.5);
+        btnReplay.setSize(70,70);
+        btnReplay.eventMode = "static";
+        btnReplay.cursor = "pointer";
+        btnReplay.on("click", ()=>{
+           // this.hideSettingOverlay();
+        });
+
+        const btnSoundOff = new Sprite(Assets.get("btn_sound_off"));   
+        btnSoundOff.x = bgr.x + spacing;
+        btnSoundOff.y = bgr.y + 100;
+        btnSoundOff.anchor.set(0.5,0.5);
+        btnSoundOff.setSize(70,70);
+        btnSoundOff.eventMode = "static";
+        btnSoundOff.cursor = "pointer";
+        btnSoundOff.on("click", ()=>{
+            //this.hideSettingOverlay();
+        });
+
+        this.settingContainer.addChild(bgr);
+        this.settingContainer.addChild(continueBtn);
+        this.settingContainer.addChild(btnReplay,btnSoundOff);
+
+        this.addChild(this.settingContainer);
+        this.setChildIndex(this.settingContainer, this.children.length - 1);
+    }
+    private showSettingOverlay(): void {
+        this.isPaused = true;
+        this.settingContainer.visible = true;
+    }
+    
+    private hideSettingOverlay(): void {
+        this.isPaused = false;
+        this.settingContainer.visible = false;
+    }
+    
     onResize(width: number, height: number): void {
         const app = SceneManager.getApp();
         // const coefficientX = this.getScaleFactor(width,height);
@@ -277,23 +410,5 @@ private layoutFooter(width: number, height: number): void {
         }   
         // this.addChild(blocks)
     }
-    public updateScoreDisplay(insSCore: number): void {
-        console.log(this.currentScore);
-        
-        this.currentScore += insSCore;
-        this.curScore.text = `${this.currentScore}`;
-        if(this.currentScore>this.bestStoreScore){
-            this.bestStoreScore = this.currentScore;
-            this.bestScore.text = `${this.bestStoreScore}`;
-            localStorage.setItem("block_puzzle_score", `${this.bestStoreScore}`);
-        }
-    }
-    private getScoreLabel(totalLines: number): string | null {
-        if (totalLines === 1) return "text";
-        if (totalLines === 2) return "cool";
-        if (totalLines === 3) return "excellent";
-        if (totalLines >= 4) return "great";
-        return null;
-      }
       
 }

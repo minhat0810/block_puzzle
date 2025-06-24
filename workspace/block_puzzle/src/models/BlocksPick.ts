@@ -6,6 +6,9 @@ import { sound } from "@pixi/sound";
 // import { GameScene } from "../scenes/GameScene";
 import { WorldMap } from "../models/WorldMap";
 import { InputController } from "../handle/InputController";
+import { SceneManager } from "../handle/SceneManager";
+import { LoseScene } from "../scenes/LoseScene";
+import { GameScene } from "../scenes/GameScene";
 
 interface Cell {
   x: number;
@@ -30,6 +33,7 @@ export class BlocksPick {
   private snappedCount = 3;
   private onResetCallBack ?: () => void;
   private containerWM: WorldMap;
+  private containerGS: GameScene;
   private lastSnapRow: number | null = null;
   private lastSnapCol: number | null = null;
   private originalTextureMap = new WeakMap<Sprite, Texture>();
@@ -39,11 +43,13 @@ export class BlocksPick {
   private onScoreCallBack ?: (insSCore: number, totalLines: number) => void;
   private isGameOver = false;
   private inputController : InputController;
+
   
-  constructor(container: Container,app: Application) {
+  constructor(container: Container,app: Application, gameScene: GameScene) {
     this.container = container;
     this.app = app;
     this.containerWM = this.container as WorldMap;
+    this.containerGS =  gameScene;
     this.inputController = new InputController(app.stage);
     app.ticker.add(this.update, this);
   }
@@ -146,6 +152,7 @@ export class BlocksPick {
       this.selectedBlock.canPick = false;
       this.selectedBlock.isActive = false;
 
+      this.container.addChild(this.selectedBlock);
 
       const shape = this.selectedBlock.getShape();
       const shapeRow = shape.length;
@@ -505,7 +512,7 @@ export class BlocksPick {
 
         for (const cell of this.cellsToDes) {
           const anim = new AnimatedSprite(frames);
-          anim.animationSpeed = 0.7;
+          anim.animationSpeed = 0.5;
           anim.loop = false;
           anim.anchor.set(0.5);
           anim.x = cell.x ;
@@ -581,12 +588,49 @@ export class BlocksPick {
     const allBlocked = activeBlocks.every(block => {
       return !this.containerWM.canSnapBlock(block);
     });
+    //allBlocked && !
     if (allBlocked && !this.isGameOver) {
       this.isGameOver = true;
       console.log(" Game Over!");
       sound.play("lose"); 
+      this.highlightRandomBlocks();
     }
   }
+  private highlightRandomBlocks(): void {
+    const grid = this.containerWM.blockGrid;
+    const highlightTexture = Assets.get("block_highlight");
+
+    const numHighlights = 15
+    let highlighted = 0;
+    let delay = 0;
+    while(highlighted < numHighlights){
+      const randRow = Math.floor(Math.random() * 8); 
+      const randCol = Math.floor(Math.random() * 8);
+      const cell = grid[randRow][randCol];
+      if (cell.occupied && cell.blockRef) {
+        const block = cell.blockRef;
+        const pos = cell.parentBlockPos;
+        if (!pos) continue;
+  
+        const localRow = randRow - pos.y;
+        const localCol = randCol - pos.x;
+        const tile = block.tiles?.[localRow]?.[localCol];
+  
+        if (tile) {
+          setTimeout(() => {
+            tile.texture = highlightTexture;
+          }, delay);
+          delay += 200;
+          highlighted++;
+        }
+      }
+    }
+    setTimeout(() => {
+      SceneManager.init(this.app);
+      SceneManager.changeScene(new LoseScene(this.containerGS.currentScore,this.containerGS.bestStoreScore));
+    }, delay + 200);
+  }
+  
   private update(): void{
     if(this.selectedBlock && this.inputController.isPointerPressed()){
         const pos = this.inputController.getPointerPosition();

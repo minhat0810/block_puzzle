@@ -87,5 +87,31 @@ export class Effects {
             }
         });
     }
+    public increaseScore(scoreObj: {value: number},score: number,text: Text ){
+      gsap.to(scoreObj,{
+        value: score,
+        duration:1.2,
+        ease: 'power1.out',
+        onUpdate: () => {
+          text.text = Math.floor(scoreObj.value).toString();
+        }
+    })
+    }
+    public star_on(star_off: Sprite,star_on: Sprite, targetX: number, targetY: number){
+      gsap.to(star_on, {
+        x: targetX,
+        y: targetY,
+        width: 30,
+        height: 30,
+        alpha: 1,
+        rotation: Math.PI * 2, 
+        duration: 0.8,
+        ease: "power2.inOut",
+        onComplete: () => {
+            star_on.visible = true;
+            star_off.visible = false;
+        }
+    });
+    }
 }
   

@@ -36,7 +36,7 @@ export class AssetLoader{
             block_5: "assets/atlases/spr_block_5.png",
             block_6: "assets/atlases/spr_block_6.png",
             block_7: "assets/atlases/spr_block_7.png",
-            block_hightlight:"assets/atlases/spr_block_highlight.png",
+            block_highlight:"assets/atlases/spr_block_highlight.png",
             block_bomb: "assets/atlases/spr_bomb.png",
             block_border: "assets/atlases/spr_border.png"
         };
@@ -147,5 +147,22 @@ export class AssetLoader{
         for(const [alias,path] of Object.entries(audios)){
             sound.add(alias,path);
         }
+    }
+    public static async loadProgress(onProgress?: (percent: number, message: string) => void): Promise<void>{
+        const steps = [
+            { fn: this.loadBackground, label: "Loading Background..." },
+            { fn: this.loadBlock, label: "Loading Blocks..." },
+            { fn: this.loadButton, label: "Loading Buttons..." },
+            { fn: this.loadUI, label: "Loading UI..." },
+            { fn: this.loadAnimationJewel, label: "Loading Jewels..." },
+            { fn: this.sounds, label: "Loading Sounds..." },
+        ]
+        for(let i=0; i < steps.length; i++){
+            const step = steps[i];
+            const percent = Math.floor((i / steps.length) * 100);
+            if (onProgress) onProgress(percent, step.label);
+            await step.fn.call(this);
+        }
+        if (onProgress) onProgress(100, "Done");
     }
 }

@@ -4,7 +4,6 @@ import { Application, Assets, Sprite, Text } from "pixi.js";
 import { AssetLoader } from "./handle/AssetsManager";
 import { SceneManager } from "./handle/SceneManager";
 //import { GameScene } from "./scenes/GameScene";
-import { LoseScene } from "./scenes/LoseScene";
 import { GameScene } from "./scenes/GameScene";
 //import { HomeScene } from "./scenes/HomeScene";
 (async () => {

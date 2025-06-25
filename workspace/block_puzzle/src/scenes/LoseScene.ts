@@ -3,11 +3,13 @@ import { Assets, Sprite, Text } from "pixi.js";
 import { SceneManager } from "../handle/SceneManager";
 import { BaseScene } from "./BaseScene";
 import { Effects } from "../models/Effects";
+import { GameScene } from "./GameScene";
 
 export class LoseScene extends BaseScene{
     private score : number = 0;
     private bestScore: number = 0;
     private effectsUI !: Effects;
+    private onReplay!: () => void;
     
     constructor(score: number, bestScore: number){
         super();
@@ -48,6 +50,8 @@ export class LoseScene extends BaseScene{
         titleBestScore.anchor.set(0.5,0.5);
         titleBestScore.setSize(100,50)
         titleBestScore.position.set(maxWidth/2, maxHeight*0.5);
+        console.log(titleBestScore.x,titleBestScore.y);
+        
 
         const bgrScore = new Sprite(Assets.get("middle"));
         bgrScore.anchor.set(0.5,0.5);
@@ -76,10 +80,21 @@ export class LoseScene extends BaseScene{
         king.setSize(30,30)
         king.position.set(bgrScore.x - bgrBScore.width/2+30, bgrBScore.y);
 
+        const wheel = new Sprite(Assets.get("wheel"));
+        wheel.anchor.set(0.5,0.5);
+        wheel.setSize(20,20)
+        wheel.position.set(bgrScore.x - bgrScore.width/2+20, bgrScore.y-5);
+
         const btnReplay = new Sprite(Assets.get("btn_replay_2"));
         btnReplay.anchor.set(0.5,0.5);
         btnReplay.setSize(70,70)
         btnReplay.position.set(maxWidth/2, maxHeight*0.8);
+        btnReplay.eventMode = "static";
+        btnReplay.cursor = "pointer";
+        this.onReplay = () => {
+            SceneManager.changeScene(new GameScene());
+        };
+        btnReplay.on("click", this.onReplay);
 
         const scoreText = new Text({
             text : "0",
@@ -93,16 +108,15 @@ export class LoseScene extends BaseScene{
         scoreText.anchor.set(0.5,0.5);
         scoreText.position.set(bgrScore.x, bgrScore.y);
 
+        const titleNewBest = new Sprite(Assets.get("text_new_best_score"));
+        titleNewBest.visible = false;
+        titleNewBest.anchor.set(0.5,0.5);
+        titleNewBest.setSize(500, 100);
+        titleNewBest.position.set(maxWidth/2, maxHeight/2);
+        const tgNewBestX = maxWidth/2;
+        const tgNewBestY = maxHeight*0.5;
+        console.log(tgNewBestX,tgNewBestY);
         
-
-        // hiệu ứng
-        const scoreObj = { value: 0};
-        this.effectsUI.increaseScore(scoreObj,this.score,scoreText);
-
-        const targetX = bgrScore.x - bgrScore.width/2+30;
-        const targetY = bgrScore.y;
-        this.effectsUI.star_on(star_off,star_on,targetX,targetY)
-
         const bestScoreText = new Text({
             text : `${this.bestScore}`,
             style: {
@@ -114,6 +128,22 @@ export class LoseScene extends BaseScene{
         })
         bestScoreText.anchor.set(0.5,0.5);
         bestScoreText.position.set(bgrBScore.x, bgrBScore.y);
+           
+
+        // hiệu ứng
+        const scoreObj = { value: 0};
+        this.effectsUI.increaseScore(scoreObj,this.score,scoreText);
+
+        const targetX = bgrScore.x - bgrScore.width/2+30;
+        const targetY = bgrScore.y;
+        this.effectsUI.starOn(star_off,star_on,wheel,targetX,targetY);
+        if(this.score > this.bestScore){ 
+            this.effectsUI.newBestScore(titleBestScore,titleNewBest,king,tgNewBestX,tgNewBestY);
+            this.effectsUI.increaseScore(scoreObj,this.score,bestScoreText);
+            this.bestScore = this.score;
+            localStorage.setItem("block_puzzle_score", `${this.bestScore}`);
+        }
+
 
         this.addChild(brgSprite);
         this.addChild(bgrLose);
@@ -124,14 +154,18 @@ export class LoseScene extends BaseScene{
         this.addChild(bgrBScore);
         this.addChild(star_off);
         this.addChild(star_on);
+        this.addChild(wheel);
         this.addChild(king);
         this.addChild(btnReplay);
         this.addChild(scoreText);
-        this.addChild(bestScoreText)
+        this.addChild(bestScoreText);
+        this.addChild(titleNewBest);
 
     }
     destroyScene(): void {
-      
+        this.off("click", this.onReplay);
+        this.removeChildren();
+        this.destroy({children: true, texture: false});
     }
     
 }

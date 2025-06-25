@@ -6,6 +6,7 @@ export class SceneManager{
 
     private static currentScene: BaseScene;
     private static app: Application;
+    static isSoundOn: boolean = true;
 
     static init(app: Application){
         this.app = app;

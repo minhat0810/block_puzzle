@@ -1,11 +1,12 @@
 /* eslint-disable prettier/prettier */
 import gsap from "gsap";
 import { Assets, Container, Sprite, Text } from "pixi.js";
+import { Blocks } from "./Blocks";
 
 
 export class Effects {
     private stage: Container;
-  
+
     constructor(stage: Container) {
       this.stage = stage;
     }
@@ -87,31 +88,111 @@ export class Effects {
             }
         });
     }
-    public increaseScore(scoreObj: {value: number},score: number,text: Text ){
+    public increaseScore(scoreObj: {value: number},score: number,text: Text, delay: number = 0 ){
       gsap.to(scoreObj,{
         value: score,
         duration:1.2,
+        delay: delay,
         ease: 'power1.out',
         onUpdate: () => {
           text.text = Math.floor(scoreObj.value).toString();
         }
     })
     }
-    public star_on(star_off: Sprite,star_on: Sprite, targetX: number, targetY: number){
-      gsap.to(star_on, {
-        x: targetX,
-        y: targetY,
-        width: 30,
-        height: 30,
+    public starOn(star_off: Sprite,star_on: Sprite,wheel: Sprite, targetX: number, targetY: number){
+         gsap.to(star_on, {
+            x: targetX,
+            y: targetY,
+            width: 30,
+            height: 30,
+            alpha: 1,
+            rotation: Math.PI * 2,
+            duration: 0.8,
+            ease: "power2.inOut",
+            onComplete: () => {
+                star_on.visible = true;
+                star_off.visible = false;
+            }
+        });
+
+        gsap.to(wheel, {
+            x: wheel.x,
+            y: wheel.y,
+            alpha: 1,
+            rotation: Math.PI * 2,
+            repeat: 1,
+            duration: 0.8,
+            ease: "power2.inOut",
+        });
+
+    }
+    public newBestScore(best_text: Sprite,new_best: Sprite,king: Sprite,targetX : number, targetY: number ){
+      new_best.visible = true;
+      gsap.to(new_best, {
+            x: targetX,
+            y: targetY,
+            width: 250,
+            height: 50,
+            alpha: 1,
+            duration: 0.8,
+            ease: "power2.inOut",
+            onComplete: () => {
+                best_text.visible = false;
+            }
+        });
+
+        king.rotation = -Math.PI / 4;
+        gsap.to(king, {
+            rotation: "-=0.1",
+            duration: 0.1,
+            yoyo: true,
+            repeat: 1,
+            repeatDelay: 0.1,
+            ease: "sine.inOut"
+        });
+
+  }
+    public newMapEffect(tile1: Sprite,tile2: Sprite, x: number, y: number, delay: number){
+      gsap.to(tile1, {
+        x: x,
+        y: y,
+        width: 50,
+        height: 50,
         alpha: 1,
-        rotation: Math.PI * 2, 
-        duration: 0.8,
-        ease: "power2.inOut",
-        onComplete: () => {
-            star_on.visible = true;
-            star_off.visible = false;
-        }
+        scale: 1,
+        duration: 0.5,
+        delay: delay,
+        ease: "back.out(1.7)"
+      });
+      gsap.to(tile2, {
+        x: x,
+        y: y,
+        width: 50,
+        height: 50,
+        alpha: 1,
+        scale: 1,
+        duration: 0.5,
+        delay: delay + 0.05,
+        ease: "back.out(1.7)"
     });
     }
+    public zoomBlock(block: Blocks, newSize: number) {
+      block.tiles.forEach((row, rowIndex) => {
+          row.forEach((tile, colIndex) => {
+              if (tile) {
+                  gsap.to(tile, {
+                      width: newSize,
+                      height: newSize,
+                      x: colIndex * newSize,
+                      y: rowIndex * newSize,
+                      duration: 0.2,
+                      ease: "back"
+                  });
+              }
+          });
+      });
+      block.shapeSize = newSize;
+  }
+  
 }
   

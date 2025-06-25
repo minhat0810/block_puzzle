@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { Assets, Container, Sprite } from "pixi.js";
 import { BlockShape } from "./BlockShape";
+import { Effects } from "./Effects";
 
 interface TileSprite extends Sprite {
     textureName?: string;
@@ -15,6 +16,7 @@ export class Blocks extends Container{
     public canPick: boolean = true;
     public tiles: Sprite[][] = [];
     public isActive: boolean = true;
+    private effectsUI : Effects;
     constructor(matrix: BlockShape, texture : string, shapeSize: number){
         super();
         this.shapeSize = shapeSize;
@@ -22,7 +24,7 @@ export class Blocks extends Container{
         this.texture = texture;
         this.originalX = 0;
         this.originalY = 0;
-        // this.o
+        this.effectsUI = new Effects(this);
         this.renderBlocks();
     }
     private renderBlocks(){
@@ -50,8 +52,9 @@ export class Blocks extends Container{
         // this.pivot.y = this.matrix.length * this.shapeSize;
     }
     public reSize(newSize: number){
-        this.shapeSize = newSize;
-        this.renderBlocks();
+        this.effectsUI.zoomBlock(this, newSize);
+     //   this.shapeSize = newSize;
+   //     this.renderBlocks();
     }
     public saveOriginalPosition(x: number, y:number) {   
         this.originalX = x;
@@ -63,6 +66,5 @@ export class Blocks extends Container{
     }    
     public getShape(): BlockShape {
         return this.matrix;
-      }
-
+    }
 }

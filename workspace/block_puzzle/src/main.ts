@@ -3,7 +3,6 @@
 import { Application, Assets, Sprite, Text } from "pixi.js";
 import { AssetLoader } from "./handle/AssetsManager";
 import { SceneManager } from "./handle/SceneManager";
-//import { GameScene } from "./scenes/GameScene";
 import { GameScene } from "./scenes/GameScene";
 //import { HomeScene } from "./scenes/HomeScene";
 (async () => {
@@ -87,7 +86,7 @@ import { GameScene } from "./scenes/GameScene";
   //app.stage.addChild(brgSprite);
 
   SceneManager.init(app);
-  SceneManager.changeScene(new GameScene);
+  SceneManager.changeScene(new GameScene());
 
 
 })();

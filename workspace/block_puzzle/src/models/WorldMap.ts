@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { Application, Assets, Container, Sprite } from "pixi.js";
 import { Blocks } from "./Blocks";
+import { Effects } from "./Effects";
 
 export class WorldMap extends Container{
     public gridSize: number = 8;
@@ -10,12 +11,14 @@ export class WorldMap extends Container{
     public gridOffsetX: number;
     public gridOffsetY : number;
     public blockGrid:{x: number, y: number; occupied: boolean, sprite: Sprite, blockRef: Blocks| null,parentBlockPos?:{ x: number; y: number }|null  }[][] = [];  
+    private effectsUI : Effects;
     constructor(offset: number, app: Application){
         super();
         this.offset = offset;
         this.app = app;
         this.gridOffsetX   = Math.round(app.screen.width/2 - (this.gridSize*this.blockSize)/2);
-        this.gridOffsetY   =  Math.round(app.screen.height / 2 + offset - (this.gridSize * this.blockSize) / 2);  
+        this.gridOffsetY   =  Math.round(app.screen.height / 2 + offset - (this.gridSize * this.blockSize) / 2); 
+        this.effectsUI = new Effects(this); 
         this.init();
     }
     public init(){
@@ -25,16 +28,16 @@ export class WorldMap extends Container{
                 const tileT = Assets.get("block_7");
                 const tileS = new Sprite(tileT);
                // tileS.alpha =
-                tileS.width = this.blockSize;
-                tileS.height = this.blockSize;
+                tileS.width = 0;
+                tileS.height = 0;
         
                 tileS.x = Math.round(this.gridOffsetX + col * this.blockSize);
                 tileS.y = Math.round(this.gridOffsetY + row * this.blockSize);
                 const tileT2 = Assets.get("cell");
                 const tileS2 = new Sprite(tileT2);
                 
-                tileS2.width = this.blockSize;
-                tileS2.height = this.blockSize;
+                tileS2.width = 0;
+                tileS2.height = 0;
         
                 tileS.x = Math.round(this.gridOffsetX + col * this.blockSize);
                 tileS.y = Math.round(this.gridOffsetY + row * this.blockSize);
@@ -47,7 +50,11 @@ export class WorldMap extends Container{
 
               
                 tileLayer.addChild(tileS);
-                tileLayer.addChild(tileS2)
+                tileLayer.addChild(tileS2);
+
+                const delay = (row + col) * 0.05;
+                this.effectsUI.newMapEffect(tileS,tileS2,tileS.x,tileS.y,delay);
+
             }
           }
           this.addChild(tileLayer);

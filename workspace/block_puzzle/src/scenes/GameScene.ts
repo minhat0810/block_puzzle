@@ -9,6 +9,7 @@ import { Blocks } from "../models/Blocks";
 import { WorldMap } from "../models/WorldMap";
 import { BlocksPick } from "../models/BlocksPick";
 import { Effects } from "../models/Effects";
+import { sound } from "@pixi/sound";
 
 export class GameScene extends BaseScene{
     
@@ -34,24 +35,29 @@ export class GameScene extends BaseScene{
     private   effectsContainer  !: Container;
 
     private headerBg            !: Sprite;
+    private bodyBg              !: Sprite;
+    private footerBg            !: Sprite;
     private settingBtn          !: Sprite;
+    private background          !: Sprite;
+
     private scoreGroup          !: Container;
     private settingContainer    !: Container;
     private gridBlockContainer  !: Container;
     private pickBlockContainer  !: Container;
     private btnGroup            !: Container;
-
     private isPaused             : boolean = false;
+    private isSoundOn: boolean = true;
+
     constructor(){
         super();
     }
     init(): void {
         const app = SceneManager.getApp();
         const bgrTexture = Assets.get("bgr");
-        const brgSprite = new Sprite(bgrTexture);
-        brgSprite.position.set(0, 0);
-        brgSprite.width = app.screen.width;
-        brgSprite.height = app.screen.height;
+        this.background = new Sprite(bgrTexture);
+        this.background.position.set(0, 0);
+        this.background.width = app.screen.width;
+        this.background.height = app.screen.height;
         const offsetYTop = -app.screen.height*0.4;
         const offsetYBottom = -app.screen.height*0.01;
         this.worldMap = new WorldMap(offsetYBottom,app);
@@ -76,14 +82,13 @@ export class GameScene extends BaseScene{
 
         });
 
-        const storeBestScore = 0;
+        const storeBestScore = localStorage.getItem("block_puzzle_score");
         if(storeBestScore){
             this.bestStoreScore = parseInt(storeBestScore,10);
             this.bestScore.text = `${this.bestStoreScore}`;
-        }
-
+        }      
         
-        this.addChild(brgSprite);
+        this.addChild(this.background);
         this.addChild(this.headerContainer);
         this.addChild(this.bodyContainer);
         this.addChild(this.pickFooterContainer);
@@ -108,21 +113,20 @@ export class GameScene extends BaseScene{
         // Score group
         this.bestScore = new Text({
             text: '0',
-            style: {fill: '#ffffff',fontSize: 30,fontFamily: 'Robo',
+            style: {fill: '#ffffff',fontSize: 20,fontFamily: 'Robo',
             }
         })
 
         this.curScore = new Text({
             text: '0',
-            style: {fill: '#ffffff',fontSize: 30,fontFamily: 'Robo',
+            style: {fill: '#ffffff',fontSize: 20,fontFamily: 'Robo',
             }
         })
         this.curScore.anchor.set(0.5,0.5)
         this.bestScore.anchor.set(0.5,0.5)
 
         this.scoreGroup = new Container();
-        this.scoreGroup.addChild(this.bestScore, this.curScore);
-        header.addChild(this.scoreGroup);
+        
 
         // btn
         this.settingBtn = new Sprite(Assets.get("btn_setting"));
@@ -139,50 +143,45 @@ export class GameScene extends BaseScene{
         })
 
         this.settingBtn.on("click", () =>{
+            sound.play("click")
             this.showSettingOverlay();
-        })
+        });
+
+        header.addChild(this.scoreGroup);
+        this.scoreGroup.addChild(this.bestScore, this.curScore);
         header.addChild(this.settingBtn);
 
         this.layoutHeader(app.screen.width, app.screen.height, offsetYTop);
         
-        // const settingTexture = Assets.get("btn_setting");
-        // const settingSprite  = new Sprite(settingTexture);
-        // settingSprite.x = brgMapSettingS.width*0.5 + brgMapSettingS.x;
-        // settingSprite.anchor.set(0.5,0.5);
-        // settingSprite.setSize(50,50)
-        // header.addChild(brgMapSettingS);
-        
-        // header.addChild(this.curScore);
-        // header.addChild(this.bestScore);
-        // header.addChild(settingSprite);
         return header;
     }
     private body(offsetYBottom: number, app: Application): Container{
         const body = new Container();
          //bgr map chính
          const brgMapTexture = Assets.get("block_border");
-         const brgMapSprite = new Sprite(brgMapTexture);
-         brgMapSprite.width = Math.max(app.screen.width*0.273,350);
-         brgMapSprite.height = Math.max(app.screen.width*0.273,350);
-         brgMapSprite.x = app.screen.width/2;
-         brgMapSprite.y = app.screen.height/2 + offsetYBottom;
-         brgMapSprite.anchor.set(0.5);
-         brgMapSprite.alpha = 0.5;
+         this.bodyBg = new Sprite(brgMapTexture);
+         this.bodyBg.width = Math.max(app.screen.width*0.273,350);
+         this.bodyBg.height = Math.max(app.screen.width*0.273,350);
+        
+         this.bodyBg.anchor.set(0.5);
+         this.bodyBg.alpha = 0.5;
  
-         body.addChild(brgMapSprite);
+         body.addChild(this.bodyBg);
+         this.layoutBody(app.screen.width,app.screen.height,offsetYBottom);
          return body;
     }
     private pickFooter(offsetYBottom: number, app: Application): Container{
         const pickFooter = new Container();
         const brgMapPickT = Assets.get("middle");
-        const brgMapPickS = new Sprite(brgMapPickT);
-        brgMapPickS.width = Math.round(Math.max(app.screen.width*0.3,350));
+        this.footerBg = new Sprite(brgMapPickT);
+        this.footerBg.width = Math.round(Math.max(app.screen.width*0.3,350));
         
-        brgMapPickS.height = app.screen.height*0.15;
-        brgMapPickS.x = app.screen.width/2;
-        brgMapPickS.y = app.screen.height*0.9;
-        brgMapPickS.anchor.set(0.5);
-        pickFooter.addChild(brgMapPickS);
+        this.footerBg.height = app.screen.height*0.15;
+        
+        this.footerBg.anchor.set(0.5);
+        pickFooter.addChild(this.footerBg);
+
+        this.layoutFooter(app.screen.width,app.screen.height)
         return pickFooter;
     }
     private worldTile(blockSize: number, gridSize: number,offset: number,app: Application):Container{
@@ -217,9 +216,15 @@ export class GameScene extends BaseScene{
     }
     private createBlocks(app: Application){
         const shapeSize = 20;
-        const space = app.screen.width * 0.05; 
-        const startX = app.screen.width/2 - 100;
+        // const space = app.screen.width * 0.05; 
+        // const startX = app.screen.width/2;
         const startY = app.screen.height * 0.85;
+        const space = Math.max(app.screen.width * 0.02, 100)
+       // const startX = this.footerBg.x - this.footerBg.x/2;
+        const blockCount = 3;
+        const totalWidth = blockCount * shapeSize + (blockCount - 1) * space;
+        const startX = this.footerBg.x - totalWidth / 2;
+        
         
         const textureList = ["block_1", "block_2", "block_3", "block_4","block_5", "block_6"];
         for( let i=0; i<3; i++){
@@ -231,7 +236,7 @@ export class GameScene extends BaseScene{
             this.pickBlockContainer.addChild(block);
             this.blockPickManager.addBlock(block); 
         }
-        
+       // this.layoutPickBlocks(app.screen.width, app.screen.height);
     }
     destroyScene(): void {   
     }
@@ -259,19 +264,32 @@ export class GameScene extends BaseScene{
         this.curScore.x = +spacing -70;
         this.curScore.y = 0;
     }
-    private layoutBody(width: number, height: number): void {
-        const bodyBg = this.bodyContainer.children[0] as Sprite;
-        bodyBg.x = width / 2;
-        bodyBg.y = height / 2;
-        bodyBg.width = bodyBg.height = Math.max(width * 0.273, 350);
+    private layoutBody(width: number, height: number, offsetYBottom: number): void {
+        this.bodyBg.x = width/2;
+        this.bodyBg.y = height/2 + offsetYBottom;
     }
     private layoutFooter(width: number, height: number): void {
-        const footer = this.pickFooterContainer.children[0] as Sprite;
-        footer.x = width / 2;
-        footer.y = height * 0.9;
-        footer.width = Math.max(width * 0.3, 350);
-        footer.height = height * 0.15;
+        this.footerBg.x = width/2;
+        this.footerBg.y = height*0.9;
     }
+    private layoutPickBlocks(width: number, height: number): void {
+        const blocks = this.pickBlockContainer.children.filter(c => c instanceof Blocks) as Blocks[];
+    
+        const shapeSize = Math.min(width * 0.05, 50); // Block size theo tỷ lệ, tối thiểu 50
+        const spacing = Math.max(width * 0.02, 20);   // Spacing tối thiểu 20px
+    
+        const totalWidth = blocks.length * shapeSize + (blocks.length - 1) * spacing;
+        const startX = (width - totalWidth) / 2;
+        const startY = height * 0.85;
+    
+        for (let i = 0; i < blocks.length; i++) {
+            const block = blocks[i];
+            block.x = startX + i * (shapeSize + spacing);
+            block.y = startY;
+            block.reSize(shapeSize);
+        }
+    }
+    
         
    
     public updateScoreDisplay(insSCore: number): void {
@@ -279,11 +297,6 @@ export class GameScene extends BaseScene{
         
         this.currentScore += insSCore;
         this.curScore.text = `${this.currentScore}`;
-        if(this.currentScore>this.bestStoreScore){
-            this.bestStoreScore = this.currentScore;
-            this.bestScore.text = `${this.bestStoreScore}`;
-         //   localStorage.setItem("block_puzzle_score", `${this.bestStoreScore}`);
-        }
     }
     private getScoreLabel(totalLines: number): string | null {
         if (totalLines === 1) return "text";
@@ -299,7 +312,7 @@ export class GameScene extends BaseScene{
         this.settingContainer.sortableChildren = true;
         
         const bgr = new Sprite(Assets.get("bgr_settings"));
-        bgr.width = app.screen.width*0.9;
+        bgr.width = 500;
         bgr.height = app.screen.height*0.95;
         bgr.position.set(app.screen.width/2,app.screen.height/2)
         bgr.anchor.set(0.5,0.5);
@@ -313,6 +326,7 @@ export class GameScene extends BaseScene{
         continueBtn.eventMode = "static";
         continueBtn.cursor = "pointer";
         continueBtn.on("click", ()=>{
+            sound.play("click")
             this.hideSettingOverlay();
         });
 
@@ -326,24 +340,61 @@ export class GameScene extends BaseScene{
         btnReplay.eventMode = "static";
         btnReplay.cursor = "pointer";
         btnReplay.on("click", ()=>{
-           // this.hideSettingOverlay();
+            sound.play("click");
+            const nextScene = new GameScene();
+            nextScene.setSoundState(SceneManager.isSoundOn);
+            SceneManager.changeScene(nextScene);
         });
 
-        const btnSoundOff = new Sprite(Assets.get("btn_sound_off"));   
+        const btnSoundOff = new Sprite(Assets.get("btn_sound_off")); 
+        btnSoundOff.visible = false;  
         btnSoundOff.x = bgr.x + spacing;
         btnSoundOff.y = bgr.y + 100;
         btnSoundOff.anchor.set(0.5,0.5);
         btnSoundOff.setSize(70,70);
         btnSoundOff.eventMode = "static";
         btnSoundOff.cursor = "pointer";
-        btnSoundOff.on("click", ()=>{
-            //this.hideSettingOverlay();
+
+        const btnSoundOn = new Sprite(Assets.get("btn_sound_on"));   
+        btnSoundOn.visible = true;
+        btnSoundOn.x = bgr.x + spacing;
+        btnSoundOn.y = bgr.y + 100;
+        btnSoundOn.anchor.set(0.5,0.5);
+        btnSoundOn.setSize(70,70);
+        btnSoundOn.eventMode = "static";
+        btnSoundOn.cursor = "pointer";
+
+        if (SceneManager.isSoundOn) {
+            sound.unmuteAll();
+            btnSoundOn.visible = true;
+            btnSoundOff.visible = false;
+        } else {
+            sound.muteAll();
+            btnSoundOn.visible = false;
+            btnSoundOff.visible = true;
+        }
+
+        btnSoundOn.on("click", ()=>{
+            sound.play("click");
+            sound.muteAll();
+            btnSoundOff.visible = true;
+            btnSoundOn.visible = false;
+            SceneManager.isSoundOn = false;
         });
+
+        btnSoundOff.on("click", ()=>{
+            btnSoundOn.visible = true;
+            btnSoundOff.visible = false;
+            sound.unmuteAll();
+            sound.play("click");
+            SceneManager.isSoundOn = true;
+        });        
 
         this.settingContainer.addChild(bgr);
         this.settingContainer.addChild(continueBtn);
-        this.settingContainer.addChild(btnReplay,btnSoundOff);
-
+        this.settingContainer.addChild(btnReplay);
+        this.settingContainer.addChild(btnSoundOff);
+        this.settingContainer.addChild(btnSoundOn);
         this.addChild(this.settingContainer);
         this.setChildIndex(this.settingContainer, this.children.length - 1);
     }
@@ -356,59 +407,65 @@ export class GameScene extends BaseScene{
         this.isPaused = false;
         this.settingContainer.visible = false;
     }
+    public setSoundState(isOn: boolean) {
+        this.isSoundOn = isOn;
+    }
     
     onResize(width: number, height: number): void {
-        const app = SceneManager.getApp();
-        // const coefficientX = this.getScaleFactor(width,height);
-        // console.log(coefficientX);
-        console.log(width);
         
-
+        const app = SceneManager.getApp();
         const offsetYTop = -height * 0.4;
         const offsetYBottom = -height * 0.01;
-
-        const header = this.headerContainer.children[0] as Sprite;
-        header.x = width / 2;
-        header.y = height / 2 + offsetYTop;
-        header.width = Math.max(width * 0.3 , 350);
-        header.height = height * 0.1;
-        
-
-        const body = this.bodyContainer.children[0] as Sprite;
-        body.x = width / 2;
-        body.y = height / 2 + offsetYBottom;
-        body.width =  Math.max(width*0.273,350)
-        body.height = Math.max(width*0.273,350)
-
-        const footerPick = this.pickFooterContainer.children[0] as Sprite;
-        footerPick.x = width / 2;
-        footerPick.y = height *0.9;
-        footerPick.width = Math.max(width * 0.3 , 350);
-        footerPick.height = height * 0.15;
-        // console.log(footerPick.x,footerPick.y);
-
+    
+        this.layoutHeader(width, height, offsetYTop);
+        this.layoutBody(width, height, offsetYBottom);
+        this.layoutFooter(width, height);
+      //  this.layoutPickBlocks(width, height);
+    
         const newBlockSize = Math.max(width * 0.033, 40);
         this.blockSize = newBlockSize;
-
+    
         this.removeChild(this.worldTileContainer);
         this.worldTileContainer = this.worldTile(newBlockSize, this.gridSize, offsetYBottom, app);
         this.addChild(this.worldTileContainer);
-
-       
-        const blocks = this.children.filter(c => c instanceof Blocks) as Blocks[];
+        this.setChildIndex(this.worldTileContainer, this.getChildIndex(this.bodyContainer) + 1);
+    
         const space = width * 0.05;
-        const startX = width * 0.4;
+        const shapeSize = 20;
+        const startX = width / 2 - 100;
         const startY = height * 0.85;
 
-        // const shapeSize = Math.max(width * 0.025, 20);
-        // console.log(shapeSize);
-        
+        const blocks = this.pickBlockContainer.children.filter(c => c instanceof Blocks) as Blocks[];
         for (let i = 0; i < blocks.length; i++) {
-            blocks[i].x = startX + i * (20 + space);
+            blocks[i].x = startX + i * (shapeSize + space);
             blocks[i].y = startY;
-            blocks[i].setSize(20); 
-        }   
-        // this.addChild(blocks)
-    }
+            blocks[i].reSize(shapeSize);
+        }
+    
+        if (this.settingContainer) {
+            const bgr = this.settingContainer.children[0] as Sprite;
+            bgr.x = width / 2;
+            bgr.y = height / 2;
+            bgr.height = height * 0.95;
+    
+            const continueBtn = this.settingContainer.children[1] as Sprite;
+            continueBtn.x = bgr.x;
+            continueBtn.y = bgr.y - 100;
+    
+            const spacing = width * 0.1;
+    
+            const btnReplay = this.settingContainer.children[2] as Sprite;
+            btnReplay.x = bgr.x - spacing;
+            btnReplay.y = bgr.y + 100;
+    
+            const btnSoundOff = this.settingContainer.children[3] as Sprite;
+            btnSoundOff.x = bgr.x + spacing;
+            btnSoundOff.y = bgr.y + 100;
+    
+            const btnSoundOn = this.settingContainer.children[4] as Sprite;
+            btnSoundOn.x = bgr.x + spacing;
+            btnSoundOn.y = bgr.y + 100;
+        }
+    }  
       
 }

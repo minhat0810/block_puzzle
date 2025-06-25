@@ -106,7 +106,7 @@ export class AssetLoader{
             btn_results: "assets/atlases/spr_button_result.png",
             btn_setting: "assets/atlases/spr_button_setting.png",
             btn_sound_off: "assets/atlases/spr_button_sound_off.png",
-            btn_sond_on: "assets/atlases/spr_button_sound_on.png",
+            btn_sound_on: "assets/atlases/spr_button_sound_on.png",
         };
         await Promise.all(
             Object.entries(buttons).map(

@@ -94,7 +94,7 @@ export class LoseScene extends BaseScene{
         this.onReplay = () => {
             SceneManager.changeScene(new GameScene());
         };
-        btnReplay.on("click", this.onReplay);
+        btnReplay.on("pointertap", this.onReplay);
 
         const scoreText = new Text({
             text : "0",
@@ -163,7 +163,7 @@ export class LoseScene extends BaseScene{
 
     }
     destroyScene(): void {
-        this.off("click", this.onReplay);
+        this.off("pointertap", this.onReplay);
         this.removeChildren();
         this.destroy({children: true, texture: false});
     }

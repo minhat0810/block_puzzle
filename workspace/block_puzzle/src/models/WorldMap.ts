@@ -22,43 +22,46 @@ export class WorldMap extends Container{
         this.init();
     }
     public init(){
-        const tileLayer = new Container();
-        for(let row = 0 ; row<this.gridSize; row++){
-            for(let col = 0 ; col<this.gridSize; col++){
-                const tileT = Assets.get("block_7");
-                const tileS = new Sprite(tileT);
-               // tileS.alpha =
-                tileS.width = 0;
-                tileS.height = 0;
-        
-                tileS.x = Math.round(this.gridOffsetX + col * this.blockSize);
-                tileS.y = Math.round(this.gridOffsetY + row * this.blockSize);
-                const tileT2 = Assets.get("cell");
-                const tileS2 = new Sprite(tileT2);
-                
-                tileS2.width = 0;
-                tileS2.height = 0;
-        
-                tileS.x = Math.round(this.gridOffsetX + col * this.blockSize);
-                tileS.y = Math.round(this.gridOffsetY + row * this.blockSize);
-
-                tileS2.x = Math.round(this.gridOffsetX + col * this.blockSize);
-                tileS2.y = Math.round(this.gridOffsetY + row * this.blockSize);
-        
-                if(!this.blockGrid[row]) this.blockGrid[row] = [];
-                this.blockGrid[row][col] = {x: tileS.x , y: tileS.y, occupied: false, sprite: tileS,blockRef: null,parentBlockPos: null};
-
+      this.drawGrid();
+    }
+    public drawGrid(){
+      const tileLayer = new Container();
+      for(let row = 0 ; row<this.gridSize; row++){
+          for(let col = 0 ; col<this.gridSize; col++){
+              const tileT = Assets.get("block_7");
+              const tileS = new Sprite(tileT);
+             // tileS.alpha =
+              tileS.width = 0;
+              tileS.height = 0;
+      
+              tileS.x = Math.round(this.gridOffsetX + col * this.blockSize);
+              tileS.y = Math.round(this.gridOffsetY + row * this.blockSize);
+              const tileT2 = Assets.get("cell");
+              const tileS2 = new Sprite(tileT2);
               
-                tileLayer.addChild(tileS);
-                tileLayer.addChild(tileS2);
+              tileS2.width = 0;
+              tileS2.height = 0;
+      
+              tileS.x = Math.round(this.gridOffsetX + col * this.blockSize);
+              tileS.y = Math.round(this.gridOffsetY + row * this.blockSize);
 
-                const delay = (row + col) * 0.05;
-                this.effectsUI.newMapEffect(tileS,tileS2,tileS.x,tileS.y,delay);
+              tileS2.x = Math.round(this.gridOffsetX + col * this.blockSize);
+              tileS2.y = Math.round(this.gridOffsetY + row * this.blockSize);
+      
+              if(!this.blockGrid[row]) this.blockGrid[row] = [];
+              this.blockGrid[row][col] = {x: tileS.x , y: tileS.y, occupied: false, sprite: tileS,blockRef: null,parentBlockPos: null};
 
-            }
+            
+              tileLayer.addChild(tileS);
+              tileLayer.addChild(tileS2);
+
+              const delay = (row + col) * 0.05;
+              this.effectsUI.newMapEffect(tileS,tileS2,tileS.x,tileS.y,delay);
+
           }
-          this.addChild(tileLayer);
         }
+        this.addChild(tileLayer);
+    }
     
   public canSnapBlock(block: Blocks) : boolean{
       const grid = this.blockGrid;
@@ -95,4 +98,13 @@ export class WorldMap extends Container{
       return false;
    }
     
+   public resize(newBlockSize: number, offsetX: number, offsetY: number) {
+    this.removeChildren();  
+
+    this.blockSize = newBlockSize;
+    this.gridOffsetX = offsetX;
+    this.gridOffsetY = offsetY;
+
+    this.drawGrid();  
+}
 }

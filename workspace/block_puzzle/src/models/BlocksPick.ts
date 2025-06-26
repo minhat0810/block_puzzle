@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 
-import { AnimatedSprite, Application, Assets, Container, FederatedPointerEvent, Sprite, Texture } from "pixi.js";
+import { AnimatedSprite, Application, Assets, Container, EventEmitter, FederatedPointerEvent, Sprite, Texture } from "pixi.js";
 import { Blocks } from "../models/Blocks";
 import { sound } from "@pixi/sound";
 // import { GameScene } from "../scenes/GameScene";
@@ -43,7 +43,7 @@ export class BlocksPick {
   private onScoreCallBack ?: (insSCore: number, totalLines: number) => void;
   private isGameOver = false;
   private inputController : InputController;
-
+  private eventEmitter: EventEmitter;
   
   constructor(container: Container,app: Application, gameScene: GameScene) {
     this.container = container;
@@ -51,6 +51,7 @@ export class BlocksPick {
     this.containerWM = this.container as WorldMap;
     this.containerGS =  gameScene;
     this.inputController = new InputController(app.stage);
+    this.eventEmitter = new EventEmitter();
     app.ticker.add(this.update, this);
   }
 
@@ -185,6 +186,7 @@ export class BlocksPick {
       }
       this.checkExploedLines();
       this.updateBlockVisib();
+      this.eventEmitter.emit("blockPlaced");
       
     } else {
        this.selectedBlock.reSize(20);
@@ -639,4 +641,11 @@ export class BlocksPick {
         this.onDragEnd();
       }
   }
+  public clearPickBlocks() {
+    this.pickBlock.length = 0;
+  }
+  public on(event: string, callback: ()=>void){
+    this.eventEmitter.on(event, callback);
+}
+
 }

@@ -4,6 +4,7 @@ import { Application, Assets, Sprite, Text } from "pixi.js";
 import { AssetLoader } from "./handle/AssetsManager";
 import { SceneManager } from "./handle/SceneManager";
 import { GameScene } from "./scenes/GameScene";
+import { TutorialScene } from "./scenes/TutorialScene";
 //import { HomeScene } from "./scenes/HomeScene";
 (async () => {
   // Create a new application
@@ -82,11 +83,17 @@ import { GameScene } from "./scenes/GameScene";
   app.stage.removeChild(progressBarBg);
   app.stage.removeChild(progressBarFill);
 
-  
-  //app.stage.addChild(brgSprite);
 
   SceneManager.init(app);
-  SceneManager.changeScene(new GameScene());
+  //localStorage.removeItem("seen_tutorial")
+  const seenTutorial = localStorage.getItem("seen_tutorial");
+
+  if (seenTutorial) {
+    localStorage.removeItem("block_puzzle_score");
+    SceneManager.changeScene(new GameScene());
+  } else {
+    SceneManager.changeScene(new TutorialScene());
+  }
 
 
 })();

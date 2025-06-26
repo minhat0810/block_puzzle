@@ -13,40 +13,41 @@ import { sound } from "@pixi/sound";
 
 export class GameScene extends BaseScene{
     
-    private blockPickManager!: BlocksPick;
+    public blockPickManager!: BlocksPick;
     private originalScale = 1;
     private originalPos = { x: 0, y: 0 };
     private isPicked   = false;
     public  blockSize !: number;
     public  gridSize : number = 8;
-    private headerContainer     !: Container;
-    private bodyContainer       !: Container;
-    private pickFooterContainer !: Container;   
-    private worldTileContainer  !: Container;
+    public headerContainer     !: Container;
+    public bodyContainer       !: Container;
+    public pickFooterContainer !: Container;   
+    public worldTileContainer  !: Container;
+    public gridBlockContainer  !: Container;
+    public pickBlockContainer  !: Container;
+
     public  blockGrid            : { x: number, y: number } [][] = [];
     public  gridOffsetX          : number = 0;
     public  gridOffsetY          : number = 0;
-    private worldMap            !: WorldMap;
+    public worldMap            !: WorldMap;
     private   curScore          !: Text;
     private   bestScore         !: Text;
     public    currentScore      : number = 0;
     public    bestStoreScore    : number = 0;
-    private   effectsUI         !: Effects;
+    public   effectsUI         !: Effects;
     private   effectsContainer  !: Container;
 
-    private headerBg            !: Sprite;
-    private bodyBg              !: Sprite;
-    private footerBg            !: Sprite;
-    private settingBtn          !: Sprite;
-    private background          !: Sprite;
+    public headerBg            !: Sprite;
+    public bodyBg              !: Sprite;
+    public footerBg            !: Sprite;
+    public settingBtn          !: Sprite;
+    public background          !: Sprite;
 
     private scoreGroup          !: Container;
     private settingContainer    !: Container;
-    private gridBlockContainer  !: Container;
-    private pickBlockContainer  !: Container;
     private btnGroup            !: Container;
     private isPaused             : boolean = false;
-    private isSoundOn: boolean = true;
+    private isSoundOn            : boolean = true;
 
     constructor(){
         super();
@@ -142,7 +143,7 @@ export class GameScene extends BaseScene{
             this.settingBtn.alpha = 1;
         })
 
-        this.settingBtn.on("click", () =>{
+        this.settingBtn.on("pointertap", () =>{
             sound.play("click")
             this.showSettingOverlay();
         });
@@ -178,53 +179,23 @@ export class GameScene extends BaseScene{
         
         this.footerBg.height = app.screen.height*0.15;
         
-        this.footerBg.anchor.set(0.5);
+        this.footerBg.anchor.set(0.5,0.5);
         pickFooter.addChild(this.footerBg);
 
         this.layoutFooter(app.screen.width,app.screen.height)
         return pickFooter;
     }
-    private worldTile(blockSize: number, gridSize: number,offset: number,app: Application):Container{
-        const tileLayer = new Container();
-        
-        this.gridOffsetX   = Math.round(app.screen.width/2 - (gridSize*blockSize)/2);
-        this.gridOffsetY   =  Math.round(app.screen.height / 2 + offset - (gridSize * blockSize) / 2);  
-        this.blockSize = blockSize;
-       // console.log(this.gridOffsetX, this.gridOffsetY);
-        
-
-        for(let row = 0 ; row<gridSize; row++){
-            for(let col = 0 ; col<gridSize; col++){
-                const tileT = Assets.get("block_7");
-                const tileS = new Sprite(tileT);
-
-                tileS.width = blockSize;
-                tileS.height = blockSize;
-
-                tileS.x = Math.round(this.gridOffsetX + col * blockSize);
-                tileS.y = Math.round(this.gridOffsetY + row * blockSize);
-
-                if(!this.blockGrid[row]) this.blockGrid[row] = [];
-                this.blockGrid[row][col] = {x: tileS.x , y: tileS.y}
-             //   console.log(this.blockGrid);
-                
-
-                tileLayer.addChild(tileS);
-            }
-        }
-        return tileLayer;
-    }
     private createBlocks(app: Application){
         const shapeSize = 20;
         // const space = app.screen.width * 0.05; 
         // const startX = app.screen.width/2;
-        const startY = app.screen.height * 0.85;
+        
         const space = Math.max(app.screen.width * 0.02, 100)
        // const startX = this.footerBg.x - this.footerBg.x/2;
         const blockCount = 3;
         const totalWidth = blockCount * shapeSize + (blockCount - 1) * space;
         const startX = this.footerBg.x - totalWidth / 2;
-        
+        const startY = app.screen.height * 0.85;
         
         const textureList = ["block_1", "block_2", "block_3", "block_4","block_5", "block_6"];
         for( let i=0; i<3; i++){
@@ -236,7 +207,6 @@ export class GameScene extends BaseScene{
             this.pickBlockContainer.addChild(block);
             this.blockPickManager.addBlock(block); 
         }
-       // this.layoutPickBlocks(app.screen.width, app.screen.height);
     }
     destroyScene(): void {   
     }
@@ -271,26 +241,7 @@ export class GameScene extends BaseScene{
     private layoutFooter(width: number, height: number): void {
         this.footerBg.x = width/2;
         this.footerBg.y = height*0.9;
-    }
-    private layoutPickBlocks(width: number, height: number): void {
-        const blocks = this.pickBlockContainer.children.filter(c => c instanceof Blocks) as Blocks[];
-    
-        const shapeSize = Math.min(width * 0.05, 50); // Block size theo tỷ lệ, tối thiểu 50
-        const spacing = Math.max(width * 0.02, 20);   // Spacing tối thiểu 20px
-    
-        const totalWidth = blocks.length * shapeSize + (blocks.length - 1) * spacing;
-        const startX = (width - totalWidth) / 2;
-        const startY = height * 0.85;
-    
-        for (let i = 0; i < blocks.length; i++) {
-            const block = blocks[i];
-            block.x = startX + i * (shapeSize + spacing);
-            block.y = startY;
-            block.reSize(shapeSize);
-        }
-    }
-    
-        
+    }       
    
     public updateScoreDisplay(insSCore: number): void {
         console.log(this.currentScore);
@@ -325,7 +276,7 @@ export class GameScene extends BaseScene{
         continueBtn.anchor.set(0.5,0.5)
         continueBtn.eventMode = "static";
         continueBtn.cursor = "pointer";
-        continueBtn.on("click", ()=>{
+        continueBtn.on("pointertap", ()=>{
             sound.play("click")
             this.hideSettingOverlay();
         });
@@ -339,7 +290,7 @@ export class GameScene extends BaseScene{
         btnReplay.setSize(70,70);
         btnReplay.eventMode = "static";
         btnReplay.cursor = "pointer";
-        btnReplay.on("click", ()=>{
+        btnReplay.on("pointertap", ()=>{
             sound.play("click");
             const nextScene = new GameScene();
             nextScene.setSoundState(SceneManager.isSoundOn);
@@ -374,7 +325,7 @@ export class GameScene extends BaseScene{
             btnSoundOff.visible = true;
         }
 
-        btnSoundOn.on("click", ()=>{
+        btnSoundOn.on("pointertap", ()=>{
             sound.play("click");
             sound.muteAll();
             btnSoundOff.visible = true;
@@ -382,7 +333,7 @@ export class GameScene extends BaseScene{
             SceneManager.isSoundOn = false;
         });
 
-        btnSoundOff.on("click", ()=>{
+        btnSoundOff.on("pointertap", ()=>{
             btnSoundOn.visible = true;
             btnSoundOff.visible = false;
             sound.unmuteAll();
@@ -412,29 +363,37 @@ export class GameScene extends BaseScene{
     }
     
     onResize(width: number, height: number): void {
-        
-        const app = SceneManager.getApp();
+       // const app = SceneManager.getApp();
         const offsetYTop = -height * 0.4;
         const offsetYBottom = -height * 0.01;
     
+        // Background
+        this.background.width = width;
+        this.background.height = height;
+    
+        // Layout UI
         this.layoutHeader(width, height, offsetYTop);
         this.layoutBody(width, height, offsetYBottom);
         this.layoutFooter(width, height);
-      //  this.layoutPickBlocks(width, height);
     
-        const newBlockSize = Math.max(width * 0.033, 40);
-        this.blockSize = newBlockSize;
+        // Update block size
+        this.blockSize = Math.max(50, 40);
     
-        this.removeChild(this.worldTileContainer);
-        this.worldTileContainer = this.worldTile(newBlockSize, this.gridSize, offsetYBottom, app);
-        this.addChild(this.worldTileContainer);
-        this.setChildIndex(this.worldTileContainer, this.getChildIndex(this.bodyContainer) + 1);
+        // Update World Map
+        const offsetX = width/2 - (this.blockSize * this.gridSize) / 2;
+        const offsetY = height/2 + offsetYBottom - (this.blockSize * this.gridSize) / 2;
+        this.gridOffsetX = offsetX;
+        this.gridOffsetY = offsetY;
+        this.worldMap.resize(this.blockSize, offsetX, offsetY);
     
-        const space = width * 0.05;
+        // Update pick blocks position
         const shapeSize = 20;
-        const startX = width / 2 - 100;
+        const space = Math.max(width * 0.02, 100)
+       // const startX = this.footerBg.x - this.footerBg.x/2;
+        const blockCount = 3;
+        const totalWidth = blockCount * shapeSize + (blockCount - 1) * space;
+        const startX = this.footerBg.x - totalWidth / 2;
         const startY = height * 0.85;
-
         const blocks = this.pickBlockContainer.children.filter(c => c instanceof Blocks) as Blocks[];
         for (let i = 0; i < blocks.length; i++) {
             blocks[i].x = startX + i * (shapeSize + space);
@@ -442,6 +401,7 @@ export class GameScene extends BaseScene{
             blocks[i].reSize(shapeSize);
         }
     
+        // Update setting overlay
         if (this.settingContainer) {
             const bgr = this.settingContainer.children[0] as Sprite;
             bgr.x = width / 2;
@@ -466,6 +426,7 @@ export class GameScene extends BaseScene{
             btnSoundOn.x = bgr.x + spacing;
             btnSoundOn.y = bgr.y + 100;
         }
-    }  
+    }
+    
       
 }

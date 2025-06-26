@@ -151,7 +151,7 @@ export class Effects {
             ease: "sine.inOut"
         });
 
-  }
+    }
     public newMapEffect(tile1: Sprite,tile2: Sprite, x: number, y: number, delay: number){
       gsap.to(tile1, {
         x: x,
@@ -192,7 +192,31 @@ export class Effects {
           });
       });
       block.shapeSize = newSize;
+    }
+    public hand(sprite: Sprite, targetX: number, targetY: number, orgX: number, orgY: number, onComplete?: ()=>void) {
+      sprite.x = orgX;
+      sprite.y = orgY;
+  
+      const tl = gsap.timeline({
+        onComplete: () => {
+          if(onComplete) onComplete();
+        }
+      });
+  
+      tl.to(sprite, {
+          x: targetX,
+          y: targetY,
+          duration: 0.5,
+          ease: "back.out(1.7)"
+      }).to(sprite, {
+          x: orgX,
+          y: orgY,
+          duration: 0.5,
+          ease: "power2.inOut",
+          delay: 0.5 
+      });
   }
+  
   
 }
   

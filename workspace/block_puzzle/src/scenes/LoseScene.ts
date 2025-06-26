@@ -29,8 +29,8 @@ export class LoseScene extends BaseScene{
         brgSprite.height = maxHeight;
 
         const bgrLose = new Sprite(Assets.get("bgr_settings"));
-        bgrLose.width = maxWidth*0.4;
-        bgrLose.height = maxHeight*0.95;
+        bgrLose.width = maxWidth*0.9;
+        bgrLose.height = maxHeight*0.9;
         bgrLose.position.set(maxWidth/2,maxHeight/2)
         bgrLose.anchor.set(0.5,0.5);
         bgrLose.alpha = 0.9;

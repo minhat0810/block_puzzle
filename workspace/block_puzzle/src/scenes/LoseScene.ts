@@ -38,7 +38,7 @@ export class LoseScene extends BaseScene{
         const loseS = new Sprite(Assets.get("title_game_over"));
         loseS.anchor.set(0.5,0.5);
         loseS.position.set(maxWidth/2, maxHeight*0.2);
-        loseS.width = maxWidth*0.2;
+        loseS.width = maxWidth*0.5;
         loseS.height = 80;
 
         const titleScore = new Sprite(Assets.get("title_score"));

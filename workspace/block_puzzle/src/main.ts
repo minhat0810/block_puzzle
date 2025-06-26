@@ -5,6 +5,7 @@ import { AssetLoader } from "./handle/AssetsManager";
 import { SceneManager } from "./handle/SceneManager";
 import { GameScene } from "./scenes/GameScene";
 import { TutorialScene } from "./scenes/TutorialScene";
+import { LoseScene } from "./scenes/LoseScene";
 //import { HomeScene } from "./scenes/HomeScene";
 (async () => {
   // Create a new application
@@ -90,7 +91,7 @@ import { TutorialScene } from "./scenes/TutorialScene";
 
   if (seenTutorial) {
     localStorage.removeItem("block_puzzle_score");
-    SceneManager.changeScene(new GameScene());
+    SceneManager.changeScene(new LoseScene(10,10));
   } else {
     SceneManager.changeScene(new TutorialScene());
   }

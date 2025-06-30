@@ -17,6 +17,8 @@ export class Blocks extends Container{
     public tiles: Sprite[][] = [];
     public isActive: boolean = true;
     private effectsUI : Effects;
+    private originalSize: number = 20;
+
     constructor(matrix: BlockShape, texture : string, shapeSize: number){
         super();
         this.shapeSize = shapeSize;
@@ -66,5 +68,13 @@ export class Blocks extends Container{
     }    
     public getShape(): BlockShape {
         return this.matrix;
+    }
+
+    public saveOriginalSize(size: number): void {
+        this.originalSize = size;
+      }
+      
+    public resetToOriginalSize(): void {
+        this.reSize(this.originalSize);
     }
 }

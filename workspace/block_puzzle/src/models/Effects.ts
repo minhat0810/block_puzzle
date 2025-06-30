@@ -26,9 +26,10 @@ export class Effects {
       const textScore = new Text({
         text: `${score}`,
         style: {
-            fill: '#ffffff',
-            fontSize: 50,
-            fontFamily: 'MyFont',
+            fill: 0xffffff,
+            fontSize: 40,
+            fontFamily: 'Arial',
+            fontWeight: "bold"
         }
       });
       textScore.anchor.set(0.5);
@@ -66,9 +67,10 @@ export class Effects {
         const text = new Text({
             text: `${score}`,
             style: {
-                fill: '#ffffff',
-                fontSize: 50,
-                fontFamily: 'MyFont',
+                fill: 0xffffff,
+                fontSize: 40,
+                fontFamily: 'Arial',
+                fontWeight: "bold"
             }
           });
         text.anchor.set(0.5);
@@ -91,7 +93,7 @@ export class Effects {
     public increaseScore(scoreObj: {value: number},score: number,text: Text, delay: number = 0 ){
       gsap.to(scoreObj,{
         value: score,
-        duration:1.2,
+        duration:0.2,
         delay: delay,
         ease: 'power1.out',
         onUpdate: () => {
@@ -99,15 +101,18 @@ export class Effects {
         }
     })
     }
-    public starOn(star_off: Sprite,star_on: Sprite,wheel: Sprite, targetX: number, targetY: number){
+    public starOn(star_off: Sprite,star_on: Sprite,wheel: Sprite, targetX: number, targetY: number,width: number, height: number,sWitdh: number,sHeight: number){
+      star_on.position.set(sWitdh / 2, sHeight / 2);
+      star_on.alpha = 1;
+      star_on.width = star_on.height = 0;
          gsap.to(star_on, {
             x: targetX,
             y: targetY,
-            width: 30,
-            height: 30,
+            width: width,
+            height: height,
             alpha: 1,
             rotation: Math.PI * 2,
-            duration: 0.8,
+            duration: 0.5,
             ease: "power2.inOut",
             onComplete: () => {
                 star_on.visible = true;
@@ -120,21 +125,21 @@ export class Effects {
             y: wheel.y,
             alpha: 1,
             rotation: Math.PI * 2,
-            repeat: 1,
+            //repeat: 1,
             duration: 0.8,
             ease: "power2.inOut",
         });
 
     }
-    public newBestScore(best_text: Sprite,new_best: Sprite,king: Sprite,targetX : number, targetY: number ){
+    public newBestScore(best_text: Sprite,new_best: Sprite,king: Sprite,targetX : number, targetY: number,width: number, height: number ){
       new_best.visible = true;
       gsap.to(new_best, {
             x: targetX,
             y: targetY,
-            width: 250,
-            height: 50,
+            width: width,
+            height: height,
             alpha: 1,
-            duration: 0.8,
+            duration: 0.5,
             ease: "power2.inOut",
             onComplete: () => {
                 best_text.visible = false;
@@ -152,7 +157,7 @@ export class Effects {
         });
 
     }
-    public newMapEffect(tile1: Sprite,tile2: Sprite, x: number, y: number, delay: number){
+    public newMapEffect(tile1: Sprite, x: number, y: number, delay: number){
       gsap.to(tile1, {
         x: x,
         y: y,
@@ -164,31 +169,32 @@ export class Effects {
         delay: delay,
         ease: "back.out(1.7)"
       });
-      gsap.to(tile2, {
-        x: x,
-        y: y,
-        width: 50,
-        height: 50,
-        alpha: 1,
-        scale: 1,
-        duration: 0.5,
-        delay: delay + 0.05,
-        ease: "back.out(1.7)"
-    });
+    //   gsap.to(tile2, {
+    //     x: x,
+    //     y: y,
+    //     width: 50,
+    //     height: 50,
+    //     alpha: 1,
+    //     scale: 1,
+    //     duration: 0.5,
+    //     delay: delay + 0.05,
+    //     ease: "back.out(1.7)"
+    // });
     }
     public zoomBlock(block: Blocks, newSize: number) {
       block.tiles.forEach((row, rowIndex) => {
           row.forEach((tile, colIndex) => {
-              if (tile) {
-                  gsap.to(tile, {
-                      width: newSize,
-                      height: newSize,
-                      x: colIndex * newSize,
-                      y: rowIndex * newSize,
-                      duration: 0.2,
-                      ease: "back"
-                  });
-              }
+            if (tile && tile.parent) {
+              gsap.to(tile, {
+                  width: newSize,
+                  height: newSize,
+                  x: colIndex * newSize,
+                  y: rowIndex * newSize,
+                  duration: 0.2,
+                  ease: "back"
+              });
+            }
+            
           });
       });
       block.shapeSize = newSize;

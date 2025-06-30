@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Application, Assets, Container, Sprite, Text } from "pixi.js";
+import { Assets, Container, Sprite, Text } from "pixi.js";
 import { BaseScene } from "./BaseScene";
 import { SceneManager } from "../handle/SceneManager";
 import { BlockShapeLibrary } from "../models/BlockShape";
@@ -49,23 +49,37 @@ export class GameScene extends BaseScene{
     private isPaused             : boolean = false;
     private isSoundOn            : boolean = true;
 
+    public appWidth              : number = 0;
+    public appHeight             : number = 0;
+    public blockX                : number = 0;
+    public blockY                : number = 0;
+    private shapeSize            : number = 20;
+    private fontSize             : number = 20;
+    private blockSpacing         : number = 0;
+    private blockCount           : number = 3;
+
+
     constructor(){
         super();
     }
     init(): void {
         const app = SceneManager.getApp();
+        this.appWidth = window.innerWidth;
+        this.appHeight = window.innerHeight;
         const bgrTexture = Assets.get("bgr");
         this.background = new Sprite(bgrTexture);
         this.background.position.set(0, 0);
-        this.background.width = app.screen.width;
-        this.background.height = app.screen.height;
-        const offsetYTop = -app.screen.height*0.4;
-        const offsetYBottom = -app.screen.height*0.01;
-        this.worldMap = new WorldMap(offsetYBottom,app);
-        this.headerContainer     = this.header(offsetYTop,app);
-        this.bodyContainer       = this.body(offsetYBottom,app);
-        this.pickFooterContainer = this.pickFooter(offsetYTop,app);
-        this.worldTileContainer  = this.worldMap;
+        this.background.width = this.appWidth;
+        this.background.height = this.appHeight;
+    
+        const offsetYTop = -this.appHeight * 0.4;
+        const offsetYBottom = -this.appHeight * 0.01;
+    
+        this.worldMap = new WorldMap(offsetYBottom, app);
+        this.headerContainer = this.header(offsetYTop);
+        this.bodyContainer = this.body();
+        this.pickFooterContainer = this.pickFooter();
+        this.worldTileContainer = this.worldMap;
         this.blockPickManager    = new BlocksPick(this.worldMap,app,this);
         this.effectsContainer = new Container();
         this.effectsContainer.sortableChildren = true;
@@ -74,17 +88,18 @@ export class GameScene extends BaseScene{
         this.pickBlockContainer = new Container();
 
         this.blockPickManager.setResetCallBack(()=>{
-            this.createBlocks(app);
+            this.createBlocks();
         })
         this.blockPickManager.setScore((score,totalLines) => {
             this.updateScoreDisplay(score);
             const label = this.getScoreLabel(totalLines);
-            if(label) this.effectsUI.scoreEffect(label,app.screen.width/2,app.screen.height/2,score);
+            if(label) this.effectsUI.scoreEffect(label,this.appWidth/2,this.appHeight/2,score);
 
         });
 
         const storeBestScore = localStorage.getItem("block_puzzle_score");
         if(storeBestScore){
+           // console.log(storeBestScore);
             this.bestStoreScore = parseInt(storeBestScore,10);
             this.bestScore.text = `${this.bestStoreScore}`;
         }      
@@ -94,15 +109,15 @@ export class GameScene extends BaseScene{
         this.addChild(this.bodyContainer);
         this.addChild(this.pickFooterContainer);
         this.addChild(this.worldTileContainer);
-        this.createBlocks(app)
+        this.createBlocks()
         this.addChild(this.gridBlockContainer);
         this.addChild(this.pickBlockContainer);
         this.addChild(this.effectsContainer);
         this.setChildIndex(this.effectsContainer, this.children.length - 1);
-        this.settingOverlay(app);
+        this.settingOverlay();
     }
     
-    private header(offsetYTop: number,app: Application): Container{
+    private header(offsetYTop: number): Container{
 
         const header = new Container();
 
@@ -114,13 +129,13 @@ export class GameScene extends BaseScene{
         // Score group
         this.bestScore = new Text({
             text: '0',
-            style: {fill: '#ffffff',fontSize: 20,fontFamily: 'Robo',
+            style: {fill: '#ffffff',fontSize: this.fontSize,fontFamily: 'Arial', fontWeight: "bold"
             }
         })
 
         this.curScore = new Text({
             text: '0',
-            style: {fill: '#ffffff',fontSize: 20,fontFamily: 'Robo',
+            style: {fill: '#ffffff',fontSize: this.fontSize,fontFamily: 'Arial', fontWeight: "bold"
             }
         })
         this.curScore.anchor.set(0.5,0.5)
@@ -132,8 +147,6 @@ export class GameScene extends BaseScene{
         // btn
         this.settingBtn = new Sprite(Assets.get("btn_setting"));
         this.settingBtn.anchor.set(0.5);
-        this.settingBtn.width = 50;
-        this.settingBtn.height = 50;
         this.settingBtn.eventMode = "static";
         this.settingBtn.cursor = "pointer";
         this.settingBtn.on("pointermove", () =>{
@@ -152,68 +165,73 @@ export class GameScene extends BaseScene{
         this.scoreGroup.addChild(this.bestScore, this.curScore);
         header.addChild(this.settingBtn);
 
-        this.layoutHeader(app.screen.width, app.screen.height, offsetYTop);
+        this.layoutHeader(this.appWidth, this.appHeight, offsetYTop);
         
         return header;
     }
-    private body(offsetYBottom: number, app: Application): Container{
+    private body(): Container{
         const body = new Container();
          //bgr map chính
          const brgMapTexture = Assets.get("block_border");
          this.bodyBg = new Sprite(brgMapTexture);
-         this.bodyBg.width = Math.max(app.screen.width*0.273,350);
-         this.bodyBg.height = Math.max(app.screen.width*0.273,350);
-        
-         this.bodyBg.anchor.set(0.5);
+        //  this.bodyBg.width = this.gridSize*this.worldMap.blockSize+15;
+        //  this.bodyBg.height = this.gridSize*this.worldMap.blockSize+15;
+         
+         
+         this.bodyBg.anchor.set(0.5,0.5);
          this.bodyBg.alpha = 0.5;
- 
-         body.addChild(this.bodyBg);
-         this.layoutBody(app.screen.width,app.screen.height,offsetYBottom);
+        // console.log(this.bodyBg.x, this.bodyBg.y);
+        
+        // body.addChild(this.bodyBg);
+         this.layoutBody(this.appWidth,this.appHeight);
          return body;
     }
-    private pickFooter(offsetYBottom: number, app: Application): Container{
+    private pickFooter(): Container{
         const pickFooter = new Container();
         const brgMapPickT = Assets.get("middle");
         this.footerBg = new Sprite(brgMapPickT);
-        this.footerBg.width = Math.round(Math.max(app.screen.width*0.3,350));
-        
-        this.footerBg.height = app.screen.height*0.15;
-        
+        this.footerBg.width = Math.round(Math.max(this.appWidth*0.3,350));
+        this.footerBg.height = this.appHeight*0.15;   
         this.footerBg.anchor.set(0.5,0.5);
         pickFooter.addChild(this.footerBg);
-
-        this.layoutFooter(app.screen.width,app.screen.height)
+        this.layoutFooter(this.appWidth,this.appHeight)
         return pickFooter;
     }
-    private createBlocks(app: Application){
-        const shapeSize = 20;
-        // const space = app.screen.width * 0.05; 
-        // const startX = app.screen.width/2;
+    private createBlocks(){
+        this.updateBlockLayoutPosition();
+       // const shapeSize = 20;
+        // const space = this.appWidth * 0.05; 
+        // const startX = this.appWidth/2;
         
-        const space = Math.max(app.screen.width * 0.02, 100)
+        // const space = Math.max(this.appWidth * 0.02, 10);
+        // this.shapeSize = this.footerBg.height*0.2;
+        // this.pickBlockContainer.removeChildren();
        // const startX = this.footerBg.x - this.footerBg.x/2;
-        const blockCount = 3;
-        const totalWidth = blockCount * shapeSize + (blockCount - 1) * space;
-        const startX = this.footerBg.x - totalWidth / 2;
-        const startY = app.screen.height * 0.85;
+        // const blockCount = 3;
+        // const totalWidth = blockCount * shapeSize + (blockCount - 1) * space;
+        // this.blockX = this.footerBg.x - totalWidth / 2;
+        // this.blockY = this.appHeight - this.appHeight*0.15;
         
         const textureList = ["block_1", "block_2", "block_3", "block_4","block_5", "block_6"];
+        this.pickBlockContainer.removeChildren();
         for( let i=0; i<3; i++){
             const matrix = BlockShapeLibrary.getRamdomShape();
             const texture = textureList[Math.floor(Math.random() * textureList.length)];
-            const block = new Blocks(matrix, texture, shapeSize);
-            block.x = startX + i*(shapeSize+space);
-            block.y = startY;
+            const block = new Blocks(matrix, texture, this.shapeSize);
+            block.x = this.blockX + i*(this.shapeSize+this.blockSpacing);
+            block.y =  this.blockY ;
             this.pickBlockContainer.addChild(block);
             this.blockPickManager.addBlock(block); 
         }
     }
+    
     destroyScene(): void {   
     }
     private layoutHeader(width: number, height: number, offsetYTop: number): void {
         const centerX = width/2;
         const centerY = height / 2 + offsetYTop;
-        const headerWidth = Math.max(width * 0.3, 350);
+        const scaleBgX = width > 720;
+        const headerWidth = width * (scaleBgX ? 0.3 : 0.8);
         const headerHeight = height * 0.15;
 
         this.headerBg.width = headerWidth;
@@ -223,29 +241,44 @@ export class GameScene extends BaseScene{
 
         this.settingBtn.x = centerX + headerWidth / 2 * 0.7;
         this.settingBtn.y = centerY;
+        this.settingBtn.width = headerHeight*0.5;
+        this.settingBtn.height = headerHeight*0.5;
 
-        const spacing = headerWidth * 0.25;
         this.scoreGroup.x = centerX ; 
         this.scoreGroup.y = centerY;
 
-        this.bestScore.x = -spacing;
+        this.bestScore.x = - (headerWidth*0.25);
+        this.bestScore.style.fontSize = headerHeight*0.2;
         this.bestScore.y = 0;
 
-        this.curScore.x = +spacing -70;
+        this.curScore.x = +(headerWidth*0.1) ;
+        this.curScore.style.fontSize = headerHeight*0.2;
         this.curScore.y = 0;
     }
-    private layoutBody(width: number, height: number, offsetYBottom: number): void {
-        this.bodyBg.x = width/2;
-        this.bodyBg.y = height/2 + offsetYBottom;
+    private layoutBody(width: number, height: number): void {
+        this.bodyBg.width = this.worldMap.blockSize * this.gridSize + 15;
+        this.bodyBg.height = this.worldMap.blockSize * this.gridSize + 15;
+        this.bodyBg.x = width / 2;
+        this.bodyBg.y = height / 2;
+
+        this.worldMap.x = this.bodyBg.x;
+        this.worldMap.y = this.bodyBg.y;
+
+        // const availableWidth = width * 0.6;
+        // const availableHeight = height * 0.6;
+     //   this.worldMap.blockSize = Math.floor(Math.min(availableWidth, availableHeight) / this.gridSize);
     }
     private layoutFooter(width: number, height: number): void {
-        this.footerBg.x = width/2;
-        this.footerBg.y = height*0.9;
-    }       
-   
+        const footerWidth = width > 720 ? width * 0.3 : width * 0.8;
+        const footerHeight = height * 0.15;
+
+        this.footerBg.width = footerWidth;
+        this.footerBg.height = footerHeight;
+        this.footerBg.x = width / 2;
+        this.footerBg.y = height - footerHeight/2;
+
+    }      
     public updateScoreDisplay(insSCore: number): void {
-        console.log(this.currentScore);
-        
         this.currentScore += insSCore;
         this.curScore.text = `${this.currentScore}`;
     }
@@ -256,7 +289,7 @@ export class GameScene extends BaseScene{
         if (totalLines >= 4) return "great";
         return null;
     }
-    private settingOverlay(app : Application): void{
+    private settingOverlay(): void{
         this.settingContainer = new Container();
         this.settingContainer.visible = false;
         this.settingContainer.eventMode = "static";
@@ -264,8 +297,8 @@ export class GameScene extends BaseScene{
         
         const bgr = new Sprite(Assets.get("bgr_settings"));
         bgr.width = 500;
-        bgr.height = app.screen.height*0.95;
-        bgr.position.set(app.screen.width/2,app.screen.height/2)
+        bgr.height = this.appHeight*0.95;
+        bgr.position.set(this.appWidth/2,this.appHeight/2)
         bgr.anchor.set(0.5,0.5);
         bgr.alpha = 0.9;
 
@@ -281,7 +314,7 @@ export class GameScene extends BaseScene{
             this.hideSettingOverlay();
         });
 
-        const spacing = app.screen.width * 0.1;
+        const spacing = this.appWidth * 0.1;
 
         const btnReplay = new Sprite(Assets.get("btn_replay_2"));   
         btnReplay.x = bgr.x - spacing;
@@ -363,42 +396,57 @@ export class GameScene extends BaseScene{
     }
     
     onResize(width: number, height: number): void {
+        
+        // const RESPONSIVE_THRESHOLD = 1000;
+        //  const isLargeScreen = width > RESPONSIVE_THRESHOLD;
        // const app = SceneManager.getApp();
+        this.appWidth = width;
+        this.appHeight = height;
+      //  console.log(this.appWidth);
+        
+
         const offsetYTop = -height * 0.4;
-        const offsetYBottom = -height * 0.01;
+      //  const offsetYBottom = -height * 0.01;
     
         // Background
-        this.background.width = width;
-        this.background.height = height;
+        this.background.width = this.appWidth;
+        this.background.height = this.appHeight;
+        
     
         // Layout UI
         this.layoutHeader(width, height, offsetYTop);
-        this.layoutBody(width, height, offsetYBottom);
+        this.layoutBody(width, height);
         this.layoutFooter(width, height);
     
         // Update block size
-        this.blockSize = Math.max(50, 40);
-    
-        // Update World Map
-        const offsetX = width/2 - (this.blockSize * this.gridSize) / 2;
-        const offsetY = height/2 + offsetYBottom - (this.blockSize * this.gridSize) / 2;
-        this.gridOffsetX = offsetX;
-        this.gridOffsetY = offsetY;
-        this.worldMap.resize(this.blockSize, offsetX, offsetY);
-    
+        // this.blockSize = Math.min(
+        //     (width * 0.7) / this.gridSize,
+        //     (height * 0.6) / this.gridSize
+        // );
+        
+        const availableWidth = width * (width > 720? 0.6 : 0.8);
+        const availableHeight = height * 0.6;
+       // this.worldMap.blockSize = Math.floor(Math.min(availableWidth, availableHeight) / this.gridSize);
+       const newBlockSize = Math.floor(Math.min(availableWidth, availableHeight) / this.gridSize);
+
+       this.worldMap.setBlockSize(newBlockSize);
+       this.blockSize = newBlockSize;
+        
+        
         // Update pick blocks position
-        const shapeSize = 20;
-        const space = Math.max(width * 0.02, 100)
-       // const startX = this.footerBg.x - this.footerBg.x/2;
-        const blockCount = 3;
-        const totalWidth = blockCount * shapeSize + (blockCount - 1) * space;
-        const startX = this.footerBg.x - totalWidth / 2;
-        const startY = height * 0.85;
+        // const shapeSize = 20;
+        // const space = Math.max(width * 0.02, 100)
+        // const blockCount = 3;
+        // const totalWidth = blockCount * shapeSize + (blockCount - 1) * space;
+        // this.blockX = this.footerBg.x - totalWidth / 2;
+        // this.blockY = height - height * 0.15;
+        
+        this.updateBlockLayoutPosition();
         const blocks = this.pickBlockContainer.children.filter(c => c instanceof Blocks) as Blocks[];
         for (let i = 0; i < blocks.length; i++) {
-            blocks[i].x = startX + i * (shapeSize + space);
-            blocks[i].y = startY;
-            blocks[i].reSize(shapeSize);
+            blocks[i].x = this.blockX + i * (this.shapeSize + this.blockSpacing);
+            blocks[i].y = this.blockY;
+            blocks[i].reSize(this.shapeSize);
         }
     
         // Update setting overlay
@@ -427,6 +475,17 @@ export class GameScene extends BaseScene{
             btnSoundOn.y = bgr.y + 100;
         }
     }
-    
+
+    private updateBlockLayoutPosition(): void {
+        this.shapeSize = this.footerBg.height*0.2; 
+        const space = Math.max(this.footerBg.width * 0.2, 20);
+        this.blockCount = 3;
+        const totalWidth = this.blockCount * this.shapeSize + (this.blockCount - 1) * space;
+
+        this.blockX = this.footerBg.x - totalWidth/2;
+        this.blockY = this.footerBg.y - this.footerBg.height/3;
+        this.blockSpacing = space;
+    }
+
       
 }

@@ -48,22 +48,27 @@ export class TutorialScene extends GameScene {
         const shape = [
             [1, 1, 1, 0, 0, 1, 1, 1],
             [1, 1, 1, 0, 0, 1, 1, 1],
+          //  [0,0,0, 0, 0, 0,0,0],
         ];
-        const block = new Blocks(shape, "block_1", 50);
-    
+        const blockSize = this.worldMap.getBlockSize();
+        const block = new Blocks(shape, "block_1", blockSize);
+        block.tiles = [];
+
         const startRow = 3;
         const startCol = 0;
-    
-        block.x = this.worldMap.blockGrid[startRow][startCol].x;
-        block.y = this.worldMap.blockGrid[startRow][startCol].y;
-    
+     //   const localPos = this.toLocal
+        block.x = this.worldMap.blockGrid[startRow][startCol].x + this.worldMap.x;
+        block.y = this.worldMap.blockGrid[startRow][startCol].y + this.worldMap.y;
+        
         for (let row = 0; row < 2; row++) {
             for (let col = 0; col < 8; col++) {
                 if (shape[row][col] === 1) {
-                    const cell = this.worldMap.blockGrid[startRow + row][startCol + col];
+                    const cell = this.worldMap.blockGrid[startRow + row][startCol + col];            
                     cell.occupied = true;
                     cell.blockRef = block;
-                    cell.parentBlockPos = { x: startCol, y: startRow };
+                    cell.parentBlockPos = { x: startCol + col, y: startRow + row };
+
+                //    block.tiles.push(cell);
                 }
             }
         }
@@ -72,7 +77,7 @@ export class TutorialScene extends GameScene {
         this.clearPickArea();
     
         const blockPick = new Blocks(BlockShapeLibrary.getShape1(), "block_2", 20);
-        blockPick.x = this.app.screen.width/2 - blockPick.shapeSize/2;
+        blockPick.x = window.innerWidth/2 ;
         blockPick.y = this.app.screen.height*0.9 - blockPick.shapeSize/2;
         this.pickBlockContainer.addChild(blockPick);
         this.blockPickManager.addBlock(blockPick);
@@ -96,8 +101,8 @@ export class TutorialScene extends GameScene {
         const startRow = 0;
         const startCol = 0;
     
-        block.x = this.worldMap.blockGrid[startRow][startCol].x;
-        block.y = this.worldMap.blockGrid[startRow][startCol].y;
+        block.x = this.worldMap.blockGrid[startRow][startCol].x + this.worldMap.x;
+        block.y = this.worldMap.blockGrid[startRow][startCol].y + this.worldMap.y;
     
         for (let row = 0; row < shape.length; row++) {
             for (let col = 0; col < shape[row].length; col++) {
@@ -105,7 +110,7 @@ export class TutorialScene extends GameScene {
                     const cell = this.worldMap.blockGrid[startRow + row][startCol + col];
                     cell.occupied = true;
                     cell.blockRef = block;
-                    cell.parentBlockPos = { x: startCol, y: startRow };
+                  //  cell.parentBlockPos = { x: startCol, y: startRow };
                 }
             }
         }

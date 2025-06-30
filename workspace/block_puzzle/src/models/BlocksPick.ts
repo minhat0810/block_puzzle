@@ -9,6 +9,7 @@ import { InputController } from "../handle/InputController";
 import { SceneManager } from "../handle/SceneManager";
 import { LoseScene } from "../scenes/LoseScene";
 import { GameScene } from "../scenes/GameScene";
+// import gsap from "gsap";
 
 interface Cell {
   x: number;
@@ -44,6 +45,8 @@ export class BlocksPick {
   private isGameOver = false;
   private inputController : InputController;
   private eventEmitter: EventEmitter;
+  private blockSize : number = 0;
+
   
   constructor(container: Container,app: Application, gameScene: GameScene) {
     this.container = container;
@@ -93,7 +96,8 @@ export class BlocksPick {
     this.offsetX = global.x - block.x;
     this.offsetY = global.y - block.y;
 
-    block.reSize(50);
+    block.saveOriginalSize(block.shapeSize);
+    block.reSize(this.containerWM.blockSize);
     block.saveOriginalPosition(block.x,block.y);
 
     this.onDragMoveEvent = (event: FederatedPointerEvent) => this.onDragMove(block,event);
@@ -109,7 +113,7 @@ export class BlocksPick {
     const snapPos = this.getSnapBlockPos(Math.round(this.selectedBlock.x),Math.round( this.selectedBlock.y));
     if (snapPos) {
         if (!this.snapPreview) {
-            this.snapPreview = new Blocks(block.getShape(), block['texture'], 50);
+            this.snapPreview = new Blocks(block.getShape(), block['texture'], this.containerWM.blockSize);
             this.snapPreview.alpha = 0.3;
             this.container.addChild(this.snapPreview);
         }
@@ -158,11 +162,11 @@ export class BlocksPick {
       const shape = this.selectedBlock.getShape();
       const shapeRow = shape.length;
       const shapeCol = shape[0].length;
-      const blockSize = this.containerWM.blockSize;
+      this.blockSize = this.containerWM.blockSize;
 
-      const startRow = Math.floor((pos.y - this.containerWM.gridOffsetY)/blockSize);
-      const startCol = Math.floor((pos.x - this.containerWM.gridOffsetX) / blockSize);
-      
+      const startRow = Math.floor((pos.y - this.containerWM.gridOffsetY)/this.blockSize);
+      const startCol = Math.floor((pos.x - this.containerWM.gridOffsetX) / this.blockSize); 
+     
       this.snappedCount--;
       sound.play("put");
       
@@ -189,7 +193,7 @@ export class BlocksPick {
       this.eventEmitter.emit("blockPlaced");
       
     } else {
-       this.selectedBlock.reSize(20);
+       this.selectedBlock.resetToOriginalSize();
        this.selectedBlock.resetToOriginalPosition(); // trả về chỗ cũ nếu sai
        this.resetHighlights();
     }
@@ -206,8 +210,14 @@ export class BlocksPick {
     const shapeRow = shape.length;
     const shapeCol = shape[0].length;
 
-    const locX = x - this.selectedBlock.pivot.x;
-    const locY = y - this.selectedBlock.pivot.y;
+    const localPos = this.containerWM.toLocal({ x, y });
+    const locX = localPos.x - this.selectedBlock.pivot.x;
+    const locY = localPos.y - this.selectedBlock.pivot.y;
+
+    // const globalPos = this.containerWM.toLocal({ x, y });
+    // const locX = globalPos.x - (shapeCol * blockSize) / 2;
+    // const locY = globalPos.y - (shapeRow * blockSize) / 2;
+
     
     for (let row = 0; row <= this.containerWM.gridSize - shapeRow; row++) {
       for (let col = 0; col <= this.containerWM.gridSize - shapeCol; col++) {
@@ -305,7 +315,7 @@ export class BlocksPick {
       const isFull = map.every(cell => cell[c]);
       if(isFull) fullCols.push(c);
     }
-  
+
     return { rows: fullRows, cols: fullCols };
   }
   private resetHighlights(): void {
@@ -378,6 +388,8 @@ export class BlocksPick {
 
 
     if(exCols.length || exRows.length){
+    
+      
       this.numRCScore.push({
         rows: exRows.length,
         cols: exCols.length
@@ -468,9 +480,7 @@ export class BlocksPick {
     
           if (isInBlockShape) {
             const tile = block.tiles[localRow][localCol];
-            callback(tile, localRow, localCol);
-
-            //this.highlightEli(tile,localRow,localCol);
+            callback(tile, localRow, localCol);    
           }
         }
       }
@@ -492,8 +502,6 @@ export class BlocksPick {
   private explore(tile: Sprite | null,localRow: number,localCol: number){
     if (tile) {
       if(this.selectedBlock){
-        // tile.texture = Assets.get(this.selectedBlock.texture);
-       // console.log(this.selectedBlock.texture);
         const colorNameMap: Record<string, string> = {
           block_1: "pink",
           block_2: "purple",
@@ -506,42 +514,50 @@ export class BlocksPick {
         let soundPlayed = false;
         const textureName = this.selectedBlock.texture;
         const colorName = colorNameMap[textureName];
-        const frames = [];
+        const frames: Texture[] = [];
         for (let i = 1; i < 10; i++) {
           frames.push(Assets.get(`jewel_${colorName}_${i}`))
         }
         this.remainingAnimations = this.cellsToDes.length;
-
-        for (const cell of this.cellsToDes) {
-          const anim = new AnimatedSprite(frames);
-          anim.animationSpeed = 0.5;
-          anim.loop = false;
-          anim.anchor.set(0.5);
-          anim.x = cell.x ;
-          anim.y = cell.y ;
-          this.app.stage.addChild(anim);
-          anim.play();
-          
-          anim.onComplete = () => {
-
-            anim.destroy();
-            tile.destroy({children:true});
-            if (!soundPlayed) {
-              const hit = hitSounds[Math.floor(Math.random() * hitSounds.length)];
-              sound.play(hit);
-              soundPlayed = true;
-            }
-
-            this.remainingAnimations--;
-            if (this.remainingAnimations === 0) {
-              const {score, totalLines} = this.calculateScore();
-              if(this.onScoreCallBack){
-                this.onScoreCallBack(score, totalLines);
+        
+        this.cellsToDes.forEach((cell, index) => {
+           const one = this.cellsToDes.length <= 8;
+          const delay = index * (one?50:10);    
+          setTimeout(() => {
+            const anim = new AnimatedSprite(frames);
+            anim.animationSpeed = 0.5;
+            anim.loop = false;
+            anim.anchor.set(0.5);
+      
+            const localPos = this.containerWM.toGlobal({ x: cell.x, y: cell.y });
+            anim.x = localPos.x;
+            anim.y = localPos.y;
+            
+      
+            this.app.stage.addChild(anim);
+             anim.play();
+            
+            anim.onComplete = () => {
+              anim.destroy();            
+              tile.destroy({children:true});
+      
+              if (!soundPlayed) {
+                const hit = hitSounds[Math.floor(Math.random() * hitSounds.length)];
+                sound.play(hit);
+                soundPlayed = true;
               }
-              this.cellsToDes.length = 0;
-            }
-          };
-        }       
+      
+              this.remainingAnimations--;
+              if (this.remainingAnimations === 0) {
+                const { score, totalLines } = this.calculateScore();
+                if (this.onScoreCallBack) {
+                  this.onScoreCallBack(score, totalLines);
+                }
+                this.cellsToDes.length = 0;
+              }
+            };
+          }, delay);
+        });   
       }
         // tile.destroy({children:true})
     } else {

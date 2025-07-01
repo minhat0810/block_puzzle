@@ -67,8 +67,8 @@ export class WorldMap extends Container{
     
           tileLayer.addChild(tileS);
 
-          const delay = (row + col) * 0.05;
-          this.effectsUI.newMapEffect(tileS, x, y, delay,this.blockSize);
+          // const delay = (row + col) * 0.05;
+          // this.effectsUI.newMapEffect(tileS, x, y, delay,this.blockSize);
         }
       }
     

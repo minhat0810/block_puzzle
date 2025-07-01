@@ -5,6 +5,7 @@ import { AssetLoader } from "./handle/AssetsManager";
 import { SceneManager } from "./handle/SceneManager";
 import { GameScene } from "./scenes/GameScene";
 import { TutorialScene } from "./scenes/TutorialScene";
+import { LoseScene } from "./scenes/LoseScene";
 // import { TutorialScene } from "./scenes/TutorialScene";
 
 (async () => {
@@ -105,7 +106,7 @@ import { TutorialScene } from "./scenes/TutorialScene";
   SceneManager.init(app);
   const seenTutorial = localStorage.getItem("seen_tutorial");
   if (seenTutorial) {
-    SceneManager.changeScene(new GameScene());
+    SceneManager.changeScene(new LoseScene(10,10));
   } else {
     localStorage.removeItem("block_puzzle_score");
     SceneManager.changeScene(new TutorialScene());

@@ -233,9 +233,9 @@ export class LoseScene extends BaseScene{
     }
     posTextElement(){
         this.scoreText.position.set(this.bgrScore.x, this.bgrScore.y);
-        this.scoreText.style.fontSize = this.bgrBScore.height*0.7;
+        this.scoreText.style.fontSize = this.bgrBScore.height*0.4;
         this.bestScoreText.position.set(this.bgrBScore.x, this.bgrBScore.y);
-        this.bestScoreText.style.fontSize = this.bgrBScore.height*0.7;
+        this.bestScoreText.style.fontSize = this.bgrBScore.height*0.4;
     }
     
     destroyScene(): void {

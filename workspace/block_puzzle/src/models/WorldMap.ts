@@ -2,7 +2,6 @@
 import { Application, Assets, Container, Sprite } from "pixi.js";
 import { Blocks } from "./Blocks";
 import { Effects } from "./Effects";
-import { GameScene } from "../scenes/GameScene";
 
 export interface Cell {
   x: number;

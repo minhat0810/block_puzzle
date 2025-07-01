@@ -146,11 +146,8 @@ export class WorldMap extends Container{
         const block = cell.blockRef;
         if (block && !resizedBlocks.has(block)&&block.parent && block.tiles?.length > 0) {
           block.reSize(this.blockSize);
-
-        if(this.parent instanceof GameScene){
           block.x = this.blockGrid[cell.parentBlockPos!.y][cell.parentBlockPos!.x].x;
           block.y = this.blockGrid[cell.parentBlockPos!.y][cell.parentBlockPos!.x].y;
-        }
           resizedBlocks.add(block);
         }
       }

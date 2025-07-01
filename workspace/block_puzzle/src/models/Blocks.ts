@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Assets, Container, Sprite } from "pixi.js";
+import { Assets, Container, Rectangle, Sprite } from "pixi.js";
 import { BlockShape } from "./BlockShape";
 import { Effects } from "./Effects";
 
@@ -44,8 +44,14 @@ export class Blocks extends Container{
                     tile.textureName = this.texture;
                     this.addChild(tile);
                     tileRow.push(tile);
-                    // this.pivot.x = 0;
-                    // this.pivot.y = 0;
+                    this.interactive = true;
+                    this.hitArea = new Rectangle(
+                    -this.shapeSize * 0.5,
+                    -this.shapeSize * 0.5,
+                    this.width + this.shapeSize,
+                    this.height + this.shapeSize
+                    );
+
                 }else {
                     tileRow.push(null as unknown as Sprite); 
                 }

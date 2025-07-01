@@ -169,7 +169,7 @@ export class Effects {
         height: blockSize,
         alpha: 1,
         scale: 1,
-        duration: 0.3,
+        duration: 0.,
         delay: delay,
         ease: "back.out(1.7)"
       });

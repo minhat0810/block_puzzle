@@ -44,6 +44,8 @@ export class Blocks extends Container{
                     tile.textureName = this.texture;
                     this.addChild(tile);
                     tileRow.push(tile);
+                    // this.pivot.x = 0;
+                    // this.pivot.y = 0;
                 }else {
                     tileRow.push(null as unknown as Sprite); 
                 }
@@ -77,4 +79,5 @@ export class Blocks extends Container{
     public resetToOriginalSize(): void {
         this.reSize(this.originalSize);
     }
+    
 }

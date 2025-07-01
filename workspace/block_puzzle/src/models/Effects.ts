@@ -3,7 +3,6 @@ import gsap from "gsap";
 import { Assets, Container, Sprite, Text } from "pixi.js";
 import { Blocks } from "./Blocks";
 
-
 export class Effects {
     private stage: Container;
 
@@ -157,15 +156,20 @@ export class Effects {
         });
 
     }
-    public newMapEffect(tile1: Sprite, x: number, y: number, delay: number){
+    public newMapEffect(tile1: Sprite, x: number, y: number, delay: number, blockSize: number){
+      tile1.width = 0;
+      tile1.height = 0;
+      tile1.alpha = 0;
+      tile1.x = x;
+      tile1.y = y;
       gsap.to(tile1, {
         x: x,
         y: y,
-        width: 50,
-        height: 50,
+        width: blockSize,
+        height: blockSize,
         alpha: 1,
         scale: 1,
-        duration: 0.5,
+        duration: 0.3,
         delay: delay,
         ease: "back.out(1.7)"
       });

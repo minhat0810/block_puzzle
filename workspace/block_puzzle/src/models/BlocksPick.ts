@@ -173,7 +173,7 @@ export class BlocksPick {
 
       for (let i = 0; i < shapeRow; i++) {
         for (let j = 0; j < shapeCol; j++) {
-          if (shape[i][j] === 1) {
+          if (shape[i][j] === 1) {    
             this.containerWM.blockGrid[startRow + i][startCol + j].occupied = true;
             this.containerWM.blockGrid[startRow + i][startCol + j].blockRef = this.selectedBlock;
             this.containerWM.blockGrid[startRow + i][startCol + j].parentBlockPos = {x: startCol , y: startRow};
@@ -315,7 +315,6 @@ export class BlocksPick {
       const isFull = map.every(cell => cell[c]);
       if(isFull) fullCols.push(c);
     }
-
     return { rows: fullRows, cols: fullCols };
   }
   private resetHighlights(): void {
@@ -402,7 +401,6 @@ export class BlocksPick {
   private exploreBlock(exRows: number[], exCols: number[]){
 
       this.eligible(exRows, exCols, this.explore.bind(this));
-    
       const grid = this.containerWM.blockGrid;
       const gridSize = this.containerWM.gridSize;
 
@@ -412,7 +410,7 @@ export class BlocksPick {
           if(cell.occupied && cell.blockRef){
             cell.occupied = false;
             cell.blockRef = null;
-            cell.parentBlockPos = null;
+            cell.parentBlockPos = null;           
           }
         }
       }
@@ -442,15 +440,13 @@ export class BlocksPick {
           
           if (block && pos) {
             const localRow = row - pos.y;
-            const localCol = col - pos.x;
-
+            const localCol = col - pos.x; 
               // Kiểm tra nằm trong giới hạn matrix trước khi truy cập
               const isInBlockShape =
                 localRow >= 0 &&
                 localCol >= 0 &&
                 localRow < block.tiles.length &&
                 localCol < block.tiles[localRow]?.length;
-
               if (isInBlockShape) {
                 const tile = block.tiles[localRow][localCol];
                 callback(tile, localRow, localCol);
@@ -471,7 +467,7 @@ export class BlocksPick {
           const localRow = row - pos.y;
           const localCol = col - pos.x;
  
-    
+          
           const isInBlockShape =
             localRow >= 0 &&
             localCol >= 0 &&
@@ -479,13 +475,20 @@ export class BlocksPick {
             localCol < block.tiles[localRow]?.length;
     
           if (isInBlockShape) {
-            const tile = block.tiles[localRow][localCol];
+            const tile = block.tiles[localRow][localCol];        
             callback(tile, localRow, localCol);    
           }
         }
       }
     }
   }
+  public removeBlock(block: Blocks) {
+    if (block.parent) {
+        block.parent.removeChild(block);
+    }
+    block.destroy({ children: true });
+}
+
   private highlightEli(tile: Sprite | null,localRow: number,localCol: number){
     if (tile) {
       if (!this.originalTextureMap.has(tile)) {
@@ -538,7 +541,7 @@ export class BlocksPick {
              anim.play();
             
             anim.onComplete = () => {
-              anim.destroy();            
+              anim.destroy();           
               tile.destroy({children:true});
       
               if (!soundPlayed) {

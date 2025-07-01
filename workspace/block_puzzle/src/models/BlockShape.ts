@@ -111,5 +111,7 @@ export class BlockShapeLibrary{
     public static getShape1(): BlockShape{
         return this.SHAPES[this.SHAPES.length-2];
     }
-
+    public static getShape(index: number): BlockShape{
+        return this.SHAPES[index];
+    }
 }

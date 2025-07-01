@@ -2,6 +2,17 @@
 import { Application, Assets, Container, Sprite } from "pixi.js";
 import { Blocks } from "./Blocks";
 import { Effects } from "./Effects";
+import { GameScene } from "../scenes/GameScene";
+
+export interface Cell {
+  x: number;
+  y: number;
+  occupied: boolean;
+  sprite: Sprite;
+  blockRef: Blocks | null;
+  parentBlockPos?: { x: number; y: number } | null;
+}
+
 
 export class WorldMap extends Container{
     public gridSize: number = 8;
@@ -16,15 +27,13 @@ export class WorldMap extends Container{
         super();
         this.offset = offset;
         this.app = app;
-        // this.gridOffsetX   = Math.round(app.screen.width/2 - (this.gridSize*this.blockSize)/2);
-        // this.gridOffsetY   =  Math.round(app.screen.height / 2 + offset - (this.gridSize * this.blockSize) / 2); 
         const availableWidth = app.screen.width * 0.6;
         const availableHeight = app.screen.height * 0.6;
         this.blockSize = Math.floor(Math.min(availableWidth, availableHeight) / this.gridSize);
         this.gridOffsetX = - (this.gridSize * this.blockSize) / 2;
         this.gridOffsetY = - (this.gridSize * this.blockSize) / 2;
-        this.x = app.screen.width / 2;
-        this.y = app.screen.height / 2; 
+        // this.x = app.screen.width / 2;
+        // this.y = app.screen.height / 2; 
         this.effectsUI = new Effects(this); 
         this.init();
     }
@@ -49,8 +58,8 @@ export class WorldMap extends Container{
     
           if (!this.blockGrid[row]) this.blockGrid[row] = [];
           this.blockGrid[row][col] = {
-            x,
-            y,
+            x: tileS.x,
+            y : tileS.y,
             occupied: false,
             sprite: tileS,
             blockRef: null,
@@ -58,10 +67,9 @@ export class WorldMap extends Container{
           };
     
           tileLayer.addChild(tileS);
-        //  tileLayer.addChild(tileS2);
-    
-          // const delay = (row + col) * 0.05;
-          // this.effectsUI.newMapEffect(tileS, x, y, delay);
+
+          const delay = (row + col) * 0.05;
+          this.effectsUI.newMapEffect(tileS, x, y, delay,this.blockSize);
         }
       }
     
@@ -108,6 +116,8 @@ export class WorldMap extends Container{
    }
   public setBlockSize(size: number) {
     this.blockSize = size;
+  }
+   resize(){
     this.gridOffsetX = - (this.gridSize * this.blockSize) / 2;
     this.gridOffsetY = - (this.gridSize * this.blockSize) / 2;
 
@@ -134,26 +144,51 @@ export class WorldMap extends Container{
       for (let col = 0; col < this.gridSize; col++) {
         const cell = this.blockGrid[row][col];
         const block = cell.blockRef;
-    //&&block.parent && block.tiles?.length > 0
         if (block && !resizedBlocks.has(block)&&block.parent && block.tiles?.length > 0) {
           block.reSize(this.blockSize);
+
+        if(this.parent instanceof GameScene){
           block.x = this.blockGrid[cell.parentBlockPos!.y][cell.parentBlockPos!.x].x;
           block.y = this.blockGrid[cell.parentBlockPos!.y][cell.parentBlockPos!.x].y;
+        }
           resizedBlocks.add(block);
         }
       }
     }
     
-}
+   }
+   resizeForTutorial(){
+    this.gridOffsetX = - (this.gridSize * this.blockSize) / 2;
+    this.gridOffsetY = - (this.gridSize * this.blockSize) / 2;
 
+    for (let row = 0; row < this.gridSize; row++) {
+        for (let col = 0; col < this.gridSize; col++) {
+            const cell = this.blockGrid[row][col];
+            const x = col * this.blockSize + this.gridOffsetX;
+            const y = row * this.blockSize + this.gridOffsetY;
+
+            cell.x = x;
+            cell.y = y;
+
+            cell.sprite.x = x;
+            cell.sprite.y = y;
+            cell.sprite.width = this.blockSize;
+            cell.sprite.height = this.blockSize;
+        }
+    }
+
+    const resizedBlocks = new Set<Blocks>();
+
+    for (let row = 0; row < this.gridSize; row++) {
+      for (let col = 0; col < this.gridSize; col++) {
+        const cell = this.blockGrid[row][col];
+        const block = cell.blockRef;
+        if (block && !resizedBlocks.has(block)&&block.parent && block.tiles?.length > 0) {
+          block.reSize(this.blockSize);
+          resizedBlocks.add(block);
+        }
+      }
+    }
     
-//    public resize(newBlockSize: number, offsetX: number, offsetY: number) {
-//  //   this.removeChildren();  
-
-//     // this.blockSize = newBlockSize;
-//     // this.gridOffsetX = offsetX;
-//     // this.gridOffsetY = offsetY;
-
-//    // this.drawGrid();  
-// }
+   }
 }

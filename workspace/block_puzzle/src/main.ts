@@ -4,6 +4,7 @@ import { Application, Assets, Container, Sprite, Text } from "pixi.js";
 import { AssetLoader } from "./handle/AssetsManager";
 import { SceneManager } from "./handle/SceneManager";
 import { GameScene } from "./scenes/GameScene";
+import { TutorialScene } from "./scenes/TutorialScene";
 // import { TutorialScene } from "./scenes/TutorialScene";
 
 (async () => {
@@ -47,7 +48,7 @@ import { GameScene } from "./scenes/GameScene";
     text: "LOADING...",
     style: {
       fill: 0x00000,
-      fontSize: 36,
+      fontSize: app.screen.width*( app.screen.width < 720 ? 0.05 : 0.03),
       fontFamily: "Arial",
       fontWeight: "bold"
     }
@@ -59,14 +60,17 @@ import { GameScene } from "./scenes/GameScene";
   function resizeLayout() {
     const { width, height } = app.screen;
 
-    // Scale bgr để fill toàn bộ màn hình
     bgr.width = width;
     bgr.height = height;
 
-    // Đặt vị trí text và progress bar ở giữa
     loadingText.position.set(width / 2, height / 2);
     progressBarBg.position.set(width / 2, height / 2 + 100);
+    progressBarBg.width = width*(width<720?0.8:0.4);
+
     progressBarFill.position.set(progressBarBg.x - progressBarBg.width / 2 + 5, progressBarBg.y);
+    progressBarFill.scale.set(0, 1);
+    progressBarFill.width = progressBarFill.texture.width;
+    
     progressBarDot.position.set(progressBarFill.x, progressBarBg.y - 25);
     progressBarDot.width = 30;
     progressBarDot.height = 30;
@@ -96,17 +100,14 @@ import { GameScene } from "./scenes/GameScene";
     const fillWidth = progressBarFill.texture.width;
     progressBarDot.x = progressBarFill.x + fillWidth * progress;
   });
-
-  // Cleanup loading
   rootContainer.removeChild(bgr, loadingText, progressBarBg, progressBarFill, progressBarDot);
 
-  // Chuyển scene
   SceneManager.init(app);
   const seenTutorial = localStorage.getItem("seen_tutorial");
   if (seenTutorial) {
     SceneManager.changeScene(new GameScene());
   } else {
     localStorage.removeItem("block_puzzle_score");
-    SceneManager.changeScene(new GameScene());
+    SceneManager.changeScene(new TutorialScene());
   }
 })();

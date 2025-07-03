@@ -10,6 +10,7 @@ export interface Cell {
   sprite: Sprite;
   blockRef: Blocks | null;
   parentBlockPos?: { x: number; y: number } | null;
+  
 }
 
 

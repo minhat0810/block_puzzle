@@ -19,14 +19,14 @@ export class Effects {
       const sprite = new Sprite(texture);
       sprite.anchor.set(0.5);
       sprite.width = 120;
-      sprite.height = 60;
+      sprite.height = 30;
       sprite.zIndex = 9999;
 
       const textScore = new Text({
         text: `${score}`,
         style: {
-            fill: 0xffffff,
-            fontSize: 40,
+            fill: '#FFFF00',
+            fontSize: 50,
             fontFamily: 'Arial',
             fontWeight: "bold"
         }
@@ -66,8 +66,8 @@ export class Effects {
         const text = new Text({
             text: `${score}`,
             style: {
-                fill: 0xffffff,
-                fontSize: 40,
+                fill: '#FFFF00',
+                fontSize: 50,
                 fontFamily: 'Arial',
                 fontWeight: "bold"
             }

@@ -46,7 +46,10 @@ export class BlocksPick {
   private inputController : InputController;
   private eventEmitter: EventEmitter;
   private blockSize : number = 0;
-
+  
+  private animExplore !: AnimatedSprite;
+  private frames: Texture[] = [];
+  
   
   constructor(container: Container,app: Application, gameScene: GameScene) {
     this.container = container;
@@ -152,7 +155,7 @@ export class BlocksPick {
 
     const pos =  this.getSnapBlockPos(adjustedX, adjustedY);
 
-    if(pos){
+    if(pos){      
       this.selectedBlock.position.set(Math.round(pos.x),Math.round( pos.y));
       this.selectedBlock.canPick = false;
       this.selectedBlock.isActive = false;
@@ -188,8 +191,12 @@ export class BlocksPick {
         this.snappedCount = 3;
         this.onResetCallBack();
       }
-      this.checkExploedLines();
-      this.updateBlockVisib();
+      // this.checkExploedLines();
+      const exploded = this.checkExploedLines();
+      // Nếu không có dòng/cột nào nổ thì updateBlockVisib
+      if (exploded.rows.length === 0 && exploded.cols.length === 0) {
+        this.updateBlockVisib();
+      }
       this.eventEmitter.emit("blockPlaced");
       
     } else {
@@ -213,11 +220,6 @@ export class BlocksPick {
     const localPos = this.containerWM.toLocal({ x, y });
     const locX = localPos.x - this.selectedBlock.pivot.x;
     const locY = localPos.y - this.selectedBlock.pivot.y;
-
-    // const globalPos = this.containerWM.toLocal({ x, y });
-    // const locX = globalPos.x - (shapeCol * blockSize) / 2;
-    // const locY = globalPos.y - (shapeRow * blockSize) / 2;
-
     
     for (let row = 0; row <= this.containerWM.gridSize - shapeRow; row++) {
       for (let col = 0; col <= this.containerWM.gridSize - shapeCol; col++) {
@@ -399,18 +401,16 @@ export class BlocksPick {
   }
   
   private exploreBlock(exRows: number[], exCols: number[]){
-
-      this.eligible(exRows, exCols, this.explore.bind(this));
+ //     this.eligible(exRows, exCols, this.explore.bind(this));
       const grid = this.containerWM.blockGrid;
       const gridSize = this.containerWM.gridSize;
-
       for(const row of exRows){
         for(let col = 0; col<gridSize; col++){
           const cell = grid[row][col];
           if(cell.occupied && cell.blockRef){
-            cell.occupied = false;
-            cell.blockRef = null;
-            cell.parentBlockPos = null;           
+            // cell.occupied = false;
+            // cell.blockRef = null;
+            // cell.parentBlockPos = null;           
           }
         }
       }
@@ -418,18 +418,23 @@ export class BlocksPick {
         for( let row = 0; row < gridSize; row++){
           const cell = grid[row][col];
           if (cell.occupied && cell.blockRef) {
-            cell.occupied = false;
-            cell.blockRef = null;
-            cell.parentBlockPos = null;
+            // cell.occupied = false;
+            // cell.blockRef = null;
+            // cell.parentBlockPos = null; 
           }
         }
      }
+     if (this.cellsToDes.length > 0) {
+      this.explore(); 
+    }
   }
   private eligible(fullRows: number[], fullCols: number[],callback: (tile: Sprite | null, localRow: number, localCol: number) => void){
     const grid = this.containerWM.blockGrid;
     const gridSize = this.containerWM.gridSize;
+
     if (fullCols.length > 0 || fullRows.length > 0) {
       for(const row of fullRows){
+     //   this.exploreMotion();
         for(let col = 0; col < gridSize; col++){
           // cột trong hàng
           const cell = grid[row][col];
@@ -440,7 +445,7 @@ export class BlocksPick {
           
           if (block && pos) {
             const localRow = row - pos.y;
-            const localCol = col - pos.x; 
+            const localCol = col - pos.x;             
               // Kiểm tra nằm trong giới hạn matrix trước khi truy cập
               const isInBlockShape =
                 localRow >= 0 &&
@@ -457,8 +462,8 @@ export class BlocksPick {
         }
       }
     }
-    for (const col of fullCols) {
-      for (let row = 0; row < gridSize; row++) {
+    for (const col of fullCols) {    
+      for (let row = 0; row < gridSize; row++) {   
         const cell = grid[row][col];
         const block = cell.blockRef;
         const pos = cell.parentBlockPos;
@@ -466,7 +471,7 @@ export class BlocksPick {
         if (block && pos) {
           const localRow = row - pos.y;
           const localCol = col - pos.x;
- 
+          
           
           const isInBlockShape =
             localRow >= 0 &&
@@ -488,6 +493,101 @@ export class BlocksPick {
     }
     block.destroy({ children: true });
 }
+  private explore() {
+    if (!this.selectedBlock) return;
+
+    const colorNameMap: Record<string, string> = {
+      block_1: "pink",
+      block_2: "purple",
+      block_3: "cyan",
+      block_4: "green",
+      block_5: "orange",
+      block_6: "red",
+    };
+    const textureName = this.selectedBlock.texture;
+    const colorName = colorNameMap[textureName];
+    const baseFrames: Texture[] = [];
+
+    for (let i = 1; i < 10; i++) {
+      const texture = Assets.get(`jewel_${colorName}_${i}`);
+      baseFrames.push(texture);
+    }
+
+    const hitSounds = ["hit1", "hit2", "hit3", "hit4", "hit5", "hit6"];
+    let soundPlayed = false;
+
+    this.remainingAnimations = this.cellsToDes.length;
+
+    this.cellsToDes.forEach((cell, index) => {
+      const one = this.cellsToDes.length <= 8;
+      const delay = index * (one ? 50 : 10);
+
+      setTimeout(() => {
+        const anim = new AnimatedSprite(baseFrames);
+        anim.animationSpeed = 0.6;
+        anim.loop = false;
+        anim.anchor.set(0.5);
+
+        const localPos = this.containerWM.toGlobal({ x: cell.x, y: cell.y });
+        // anim.width = this.containerWM.blockSize*;
+        // anim.height = this.containerWM.blockSize*2.5;
+        anim.x = localPos.x;
+        anim.y = localPos.y;
+        this.app.stage.addChild(anim);
+        anim.play();
+        if (!soundPlayed) {
+          const hit = hitSounds[Math.floor(Math.random() * hitSounds.length)];
+          sound.play(hit);
+          soundPlayed = true;
+        }
+        
+        anim.onComplete = () => {
+          anim.destroy();
+          const block = cell.blockRef;
+          const pos = cell.parentBlockPos;
+          if (block && pos) {
+            const indices = this.getCellIndex(cell);
+            if (!indices) return;
+
+            const { row, col } = indices;
+            const localRow = row - pos.y;
+            const localCol = col - pos.x;
+
+            const tile = block.tiles?.[localRow]?.[localCol];
+            if (tile) {
+              tile.destroy({ children: true });
+            }
+
+            cell.occupied = false;
+            cell.blockRef = null;
+            cell.parentBlockPos = null;
+         }
+
+          this.remainingAnimations--;
+          if (this.remainingAnimations === 0) {
+            const { score, totalLines } = this.calculateScore();
+            if (this.onScoreCallBack) {
+              this.onScoreCallBack(score, totalLines);
+            }
+            this.cellsToDes.length = 0;
+            this.updateBlockVisib();
+          }
+        };
+      }, delay);
+    });
+  }
+  private getCellIndex(cell: Cell): { row: number, col: number } | null {
+    const grid = this.containerWM.blockGrid;
+    for (let r = 0; r < grid.length; r++) {
+      for (let c = 0; c < grid[r].length; c++) {
+        if (grid[r][c] === cell) {
+          return { row: r, col: c };
+        }
+      }
+    }
+    return null;
+  }
+
 
   private highlightEli(tile: Sprite | null,localRow: number,localCol: number){
     if (tile) {
@@ -496,77 +596,11 @@ export class BlocksPick {
         if(this.selectedBlock){
           tile.texture = Assets.get(this.selectedBlock.texture);
         }
-        // tile.destroy({children:true})
       }
-    } else {
-      console.warn(`Không tìm thấy tile tại local[${localRow}][${localCol}]`);
-  }
-  }
-  private explore(tile: Sprite | null,localRow: number,localCol: number){
-    if (tile) {
-      if(this.selectedBlock){
-        const colorNameMap: Record<string, string> = {
-          block_1: "pink",
-          block_2: "purple",
-          block_3: "cyan",
-          block_4: "green",
-          block_5: "orange",
-          block_6: "red",
-        };
-        const hitSounds = ["hit1","hit2","hit3","hit4","hit5","hit6"]
-        let soundPlayed = false;
-        const textureName = this.selectedBlock.texture;
-        const colorName = colorNameMap[textureName];
-        const frames: Texture[] = [];
-        for (let i = 1; i < 10; i++) {
-          frames.push(Assets.get(`jewel_${colorName}_${i}`))
-        }
-        this.remainingAnimations = this.cellsToDes.length;
-        
-        this.cellsToDes.forEach((cell, index) => {
-           const one = this.cellsToDes.length <= 8;
-          const delay = index * (one?50:10);    
-          setTimeout(() => {
-            const anim = new AnimatedSprite(frames);
-            anim.animationSpeed = 0.5;
-            anim.loop = false;
-            anim.anchor.set(0.5);
-      
-            const localPos = this.containerWM.toGlobal({ x: cell.x, y: cell.y });
-            anim.x = localPos.x;
-            anim.y = localPos.y;
-            
-      
-            this.app.stage.addChild(anim);
-             anim.play();
-            
-            anim.onComplete = () => {
-              anim.destroy();           
-              tile.destroy({children:true});
-      
-              if (!soundPlayed) {
-                const hit = hitSounds[Math.floor(Math.random() * hitSounds.length)];
-                sound.play(hit);
-                soundPlayed = true;
-              }
-      
-              this.remainingAnimations--;
-              if (this.remainingAnimations === 0) {
-                const { score, totalLines } = this.calculateScore();
-                if (this.onScoreCallBack) {
-                  this.onScoreCallBack(score, totalLines);
-                }
-                this.cellsToDes.length = 0;
-              }
-            };
-          }, delay);
-        });   
-      }
-        // tile.destroy({children:true})
     } else {
       console.warn(`Không tìm thấy tile tại local[${localRow}][${localCol}]`);
     }
-   }
+  }
    private calculateScore(): { score: number, totalLines: number } {
     let totalScore = 0;
     let totalLines = 0;

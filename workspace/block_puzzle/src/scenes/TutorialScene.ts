@@ -24,9 +24,9 @@ export class TutorialScene extends GameScene {
             } else if (this.currentStep === 1) {
                 setTimeout(() => this.startStep(2), 1000);
             } else if (this.currentStep === 2) {
-                setTimeout(() => this.setupStep3(), 500);
+                setTimeout(() => this.setupStep3(), 1000);
             }else if (this.currentStep === 3) {
-                setTimeout(() => this.finishTutorial(), 500);
+                setTimeout(() => this.finishTutorial(), 1000);
             }
         });
         requestAnimationFrame(()=> this.startStep(0))
@@ -153,13 +153,10 @@ export class TutorialScene extends GameScene {
         this.createPickBlock(27);
     }
 
-    private setupStep4(){
-        SceneManager.changeScene(new GameScene());
-    }
     private createPickBlock(inxdex: number) {
         this.blockPick = new Blocks(BlockShapeLibrary.getShape(inxdex), "block_2", this.shapeSize);
-        this.blockPick.x = this.app.screen.width / 2 - this.blockPick.shapeSize / 2;
-        this.blockPick.y = this.app.screen.height * 0.9 - this.blockPick.shapeSize / 2;
+        this.blockPick.x = this.app.screen.width / 2 - this.blockPick.shapeSize * this.blockPick.getShape()[0].length /2;
+        this.blockPick.y = this.footerBg.y - this.blockPick.shapeSize * this.blockPick.getShape().length /2 ;
         this.pickBlockContainer.addChild(this.blockPick);
         this.blockPickManager.addBlock(this.blockPick);
         this.effect(
@@ -190,7 +187,9 @@ export class TutorialScene extends GameScene {
     }
     private finishTutorial() {
         localStorage.setItem("seen_tutorial", "true"); 
-        SceneManager.changeScene(new GameScene());
+        requestAnimationFrame(()=>{
+            SceneManager.changeScene(new GameScene());
+        })
     }
     override onResize(width: number, height: number): void {
         this.appWidth = width;
@@ -207,19 +206,20 @@ export class TutorialScene extends GameScene {
         const availableWidth = width * (width > 720 ? 0.6 : 0.8);
         const availableHeight = height * 0.6;
         const newBlockSize = Math.floor(Math.min(availableWidth, availableHeight) / this.gridSize);
-        this.blockSize = newBlockSize;
+        
+       // this.blockSize = newBlockSize;
     
         this.worldMap.setBlockSize(newBlockSize);
         this.worldMap.resizeForTutorial();      
         this.updateBlockPositions();             
     
         this.updateBlockLayoutPosition();
-        this.blockPick.x = width/2;
+        // this.blockPick.x = width/2;
         
         const pickBlocks = this.pickBlockContainer.children.filter(c => c instanceof Blocks) as Blocks[];
         for (let i = 0; i < pickBlocks.length; i++) {
-            pickBlocks[i].x = width/2;
-            pickBlocks[i].y = this.blockY;
+            pickBlocks[i].x = this.app.screen.width / 2 - this.blockPick.shapeSize * this.blockPick.getShape()[0].length /2;;
+            pickBlocks[i].y = this.footerBg.y - this.blockPick.shapeSize * this.blockPick.getShape().length /2 ;
             pickBlocks[i].reSize(this.shapeSize);
         }
     

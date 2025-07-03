@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Assets, Sprite, Text } from "pixi.js";
+import { Assets, NineSliceSprite, Sprite, Text } from "pixi.js";
 import { SceneManager } from "../handle/SceneManager";
 import { BaseScene } from "./BaseScene";
 import { Effects } from "../models/Effects";
@@ -12,12 +12,12 @@ export class LoseScene extends BaseScene{
     private onReplay!: () => void;
 
     private brgSprite       !: Sprite;
-    private bgrLose         !: Sprite;
+    private bgrLose         !: NineSliceSprite;
     private loseS           !: Sprite;
     private titleScore      !: Sprite;
     private titleBestScore  !: Sprite;
-    private bgrScore        !: Sprite;
-    private bgrBScore       !: Sprite;
+    private bgrScore        !: NineSliceSprite;
+    private bgrBScore       !: NineSliceSprite;
     private star_off        !: Sprite;
     private star_on         !: Sprite;
     private king            !: Sprite;
@@ -41,8 +41,16 @@ export class LoseScene extends BaseScene{
         this.maxHeight = app.screen.height;
         this.effectsUI = new Effects(this);
 
-        this.brgSprite = new Sprite( Assets.get("bgr")); 
-        this.bgrLose = new Sprite(Assets.get("bgr_settings")) 
+        this.brgSprite = new Sprite({
+            texture:  Assets.get("bgr"),
+        }); 
+        this.bgrLose = new NineSliceSprite({
+            texture: Assets.get("bgr_settings"),
+            leftWidth: 100,
+            rightWidth: 100,
+            topHeight: 100,
+            bottomHeight: 100,
+        }) 
         this.bgrLose.anchor.set(0.5,0.5);
         this.bgrLose.alpha = 0.9;
 
@@ -58,11 +66,23 @@ export class LoseScene extends BaseScene{
         this.titleBestScore.anchor.set(0.5,0.5);
         
 
-        this.bgrScore = new Sprite(Assets.get("middle"));
+        this.bgrScore = new NineSliceSprite({
+            texture: Assets.get("middle"),
+            leftWidth: 150,
+            rightWidth: 150,
+            topHeight: 150,
+            bottomHeight: 150,
+        });
         this.bgrScore.anchor.set(0.5,0.5);
         this.bgrScore.alpha = 0.5;
 
-        this.bgrBScore = new Sprite(Assets.get("middle"));
+        this.bgrBScore = new NineSliceSprite(
+          {  texture:Assets.get("middle"),
+            leftWidth: 150,
+            rightWidth: 150,
+            topHeight: 150,
+            bottomHeight: 150,
+          });
         this.bgrBScore.anchor.set(0.5,0.5);
         this.bgrBScore.alpha = 0.5;
 
@@ -101,7 +121,7 @@ export class LoseScene extends BaseScene{
         const targetX = this.star_off.x;
         const targetY = this.star_off.y;
         const tgNewBestX = this.maxWidth/2;
-        const tgNewBestY = this.maxHeight*0.5;
+        const tgNewBestY = (this.bgrBScore.y + this.bgrScore.y )/2;
 
         // this.star_on.width = 0;
         // this.star_on.height = 0;
@@ -178,7 +198,7 @@ export class LoseScene extends BaseScene{
         const spacing = h * 0.03;
         const blockW = w * (isMobile ?0.5: 0.4);
         const blockH = h * 0.1;
-        const iconSize = w * (isMobile ?0.07: 0.03);
+        const iconSize = h * (isMobile ?0.05: 0.05);
     
         this.brgSprite.position.set(0, 0);
         this.brgSprite.width = w;
@@ -189,12 +209,12 @@ export class LoseScene extends BaseScene{
         this.bgrLose.height = h * 0.9;
     
 
-        this.loseS.position.set(w / 2, h * 0.15);
-        this.loseS.width = w * 0.4;
+        this.loseS.position.set(w / 2, this.bgrLose.height*0.2);
+        this.loseS.width = w * (isMobile ? 0.5 :  0.3);
         this.loseS.height = h * 0.08;
     
-        this.titleScore.width = w* (isMobile? 0.2: 0.07);
-        this.titleScore.height = h*0.07;
+        this.titleScore.width = w* (isMobile? 0.15: 0.07);
+        this.titleScore.height = h*( h > 800 ? 0.04: 0.07);
         this.titleScore.position.set(w / 2, this.loseS.y + this.loseS.height + spacing);
    
         this.bgrScore.setSize(blockW, blockH);
@@ -211,7 +231,7 @@ export class LoseScene extends BaseScene{
     
         
     
-        this.titleBestScore.setSize(w* (isMobile? 0.2: 0.07), h*0.07);
+        this.titleBestScore.setSize( w* (isMobile? 0.15: 0.07),h*( h > 800 ? 0.04: 0.07));
         this.titleBestScore.position.set(w / 2, this.bgrScore.y + blockH + spacing * 1.2);
     
 
@@ -223,13 +243,13 @@ export class LoseScene extends BaseScene{
     
        
     
-        this.titleNewBest.setSize(w* (isMobile? 0.2: 0.1), h*0.07);
-    //    this.titleNewBest.height = h * (isMobile? 0.07 : 0.1);
+        this.titleNewBest.width = w * ((isMobile? 0.2 : 0.15));
+        this.titleNewBest.height = h * (isMobile? 0.035: 0.07);
         this.titleNewBest.position.set(w / 2, this.bgrScore.y + blockH + spacing * 1.2);
     
     
-        this.btnReplay.setSize(w *(isMobile? 0.1 :0.05), w *(isMobile? 0.1 :0.05));
-        this.btnReplay.position.set(w / 2, h * 0.85);
+        this.btnReplay.setSize(iconSize*1.5,iconSize*1.5);
+        this.btnReplay.position.set(w / 2, h * 0.8);
     }
     posTextElement(){
         this.scoreText.position.set(this.bgrScore.x, this.bgrScore.y);

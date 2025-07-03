@@ -58,8 +58,17 @@ export class Blocks extends Container{
             }
             this.tiles.push(tileRow);
         }
-        // this.pivot.x = (this.matrix[0].length * this.shapeSize);
-        // this.pivot.y = this.matrix.length * this.shapeSize;
+        this.interactive = true;
+        const padding = 10;
+        const width = this.shapeSize * this.matrix[0].length;
+        const height = this.shapeSize * this.matrix.length;
+
+        this.hitArea = new Rectangle(
+            -padding,
+            -padding,
+            width + padding * 2,
+            height + padding * 2
+        );
     }
     public reSize(newSize: number){
         this.effectsUI.zoomBlock(this, newSize);

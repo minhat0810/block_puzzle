@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Assets, Container, Sprite, Text } from "pixi.js";
+import {  Assets, Container, NineSliceSprite, Sprite, Text } from "pixi.js";
 import { BaseScene } from "./BaseScene";
 import { SceneManager } from "../handle/SceneManager";
 import { BlockShapeLibrary } from "../models/BlockShape";
@@ -24,25 +24,26 @@ export class GameScene extends BaseScene{
     public gridBlockContainer  !: Container;
     public pickBlockContainer  !: Container;
 
+    private block               !: Blocks;
     public  blockGrid            : { x: number, y: number } [][] = [];
     public  gridOffsetX          : number = 0;
     public  gridOffsetY          : number = 0;
-    public worldMap            !: WorldMap;
+    public worldMap             !: WorldMap;
     private   curScore          !: Text;
     private   bestScore         !: Text;
-    public    currentScore      : number = 0;
-    public    bestStoreScore    : number = 0;
-    public   effectsUI         !: Effects;
+    public    currentScore       : number = 0;
+    public    bestStoreScore     : number = 0;
+    public   effectsUI          !: Effects;
     private   effectsContainer  !: Container;
 
-    public headerBg            !: Sprite;
-    public bodyBg              !: Sprite;
-    public footerBg            !: Sprite;
-    public settingBtn          !: Sprite;
-    public background          !: Sprite;
+    public headerBg             !: NineSliceSprite;
+    public bodyBg               !: Sprite;
+    public footerBg             !: NineSliceSprite;
+    public settingBtn           !: Sprite;
+    public background           !: Sprite;
 
     private scoreGroup          !: Container;
-    public settingContainer    !: Container;
+    public settingContainer     !: Container;
     private btnGroup            !: Container;
     private isPaused             : boolean = false;
     private isSoundOn            : boolean = true;
@@ -51,16 +52,16 @@ export class GameScene extends BaseScene{
     public appHeight             : number = 0;
     public blockX                : number = 0;
     public blockY                : number = 0;
-    public shapeSize            : number = 20;
+    public shapeSize             : number = 20;
     private fontSize             : number = 20;
-    public blockSpacing         : number = 0;
+    public blockSpacing          : number = 0;
     private blockCount           : number = 3;
 
-    public settingBgr!: Sprite;
-    public btnContinue!: Sprite;
-    public btnReplay!: Sprite;
-    public btnSoundOn!: Sprite;
-    public btnSoundOff!: Sprite;
+    public settingBgr           !: NineSliceSprite;
+    public btnContinue          !: Sprite;
+    public btnReplay            !: Sprite;
+    public btnSoundOn           !: Sprite;
+    public btnSoundOff          !: Sprite;
 
 
 
@@ -115,7 +116,10 @@ export class GameScene extends BaseScene{
         this.addChild(this.bodyContainer);
         this.addChild(this.pickFooterContainer);
         this.addChild(this.worldTileContainer);
-        this.createBlocks()
+        this.updateBlockLayoutPosition();
+        requestAnimationFrame(() => {
+            this.createBlocks();
+        });
         this.addChild(this.gridBlockContainer);
         this.addChild(this.pickBlockContainer);
         this.addChild(this.effectsContainer);
@@ -128,20 +132,26 @@ export class GameScene extends BaseScene{
         const header = new Container();
 
         // Header background
-        this.headerBg = new Sprite(Assets.get("top_enless"));
+        this.headerBg = new NineSliceSprite({
+            texture: Assets.get("top_enless"),
+            leftWidth: 130,
+            rightWidth: 130,
+            topHeight: 140,
+            bottomHeight: 140,
+        });
         this.headerBg.anchor.set(0.5);
         header.addChild(this.headerBg);
         
         // Score group
         this.bestScore = new Text({
             text: '0',
-            style: {fill: '#ffffff',fontSize: this.fontSize,fontFamily: 'Arial', fontWeight: "bold"
+            style: {fill: '#FFFF00',fontSize: this.fontSize,fontFamily: 'Arial', fontWeight: "bold"
             }
         })
 
         this.curScore = new Text({
             text: '0',
-            style: {fill: '#ffffff',fontSize: this.fontSize,fontFamily: 'Arial', fontWeight: "bold"
+            style: {fill: '#FFFF00',fontSize: this.fontSize,fontFamily: 'Arial', fontWeight: "bold"
             }
         })
         this.curScore.anchor.set(0.5,0.5)
@@ -188,16 +198,22 @@ export class GameScene extends BaseScene{
          this.bodyBg.alpha = 0.5;
         // console.log(this.bodyBg.x, this.bodyBg.y);
         
-        // body.addChild(this.bodyBg);
+         
          this.layoutBody(this.appWidth,this.appHeight);
          return body;
     }
     private pickFooter(): Container{
         const pickFooter = new Container();
         const brgMapPickT = Assets.get("middle");
-        this.footerBg = new Sprite(brgMapPickT);
-        this.footerBg.width = Math.round(Math.max(this.appWidth*0.3,350));
-        this.footerBg.height = this.appHeight*0.15;   
+        this.footerBg = new NineSliceSprite({
+            texture: brgMapPickT,
+            leftWidth: 100,
+            topHeight: 100,
+            rightWidth: 100,
+            bottomHeight: 100, 
+        });
+        // this.footerBg.width = Math.round(Math.max(this.appWidth*0.3,350));
+     //   // this.footerBg.height = this.appHeight*0.15;   
         this.footerBg.anchor.set(0.5,0.5);
         pickFooter.addChild(this.footerBg);
         this.layoutFooter(this.appWidth,this.appHeight)
@@ -211,11 +227,14 @@ export class GameScene extends BaseScene{
         for( let i=0; i<3; i++){
             const matrix = BlockShapeLibrary.getRamdomShape();
             const texture = textureList[Math.floor(Math.random() * textureList.length)];
-            const block = new Blocks(matrix, texture, this.shapeSize);
-            block.x = this.blockX + i*(this.shapeSize+this.blockSpacing);
-            block.y =  this.blockY ;
-            this.pickBlockContainer.addChild(block);
-            this.blockPickManager.addBlock(block); 
+            this.block = new Blocks(matrix, texture, this.shapeSize);
+            this.block.x = this.blockX + i*(this.shapeSize+this.blockSpacing);
+            this.block.y = this.footerBg.y - this.block.shapeSize * this.block.getShape().length / 2;
+
+            console.log(this.block.getShape().length);
+            
+            this.pickBlockContainer.addChild(this.block);
+            this.blockPickManager.addBlock(this.block); 
         }
     }
     
@@ -224,12 +243,13 @@ export class GameScene extends BaseScene{
     public layoutHeader(width: number, height: number, offsetYTop: number): void {
         const centerX = width/2;
         const centerY = height / 2 + offsetYTop;
-        const scaleBgX = width > 720;
-        const headerWidth = width * (scaleBgX ? 0.3 : 0.8);
+        const headerWidth = width > 720 ? width * 0.3 : width * 0.9;
         const headerHeight = height * 0.15;
 
         this.headerBg.width = headerWidth;
         this.headerBg.height = headerHeight;
+
+    
         this.headerBg.x = centerX;
         this.headerBg.y = centerY;
 
@@ -242,11 +262,11 @@ export class GameScene extends BaseScene{
         this.scoreGroup.y = centerY;
 
         this.bestScore.x = - (headerWidth*0.25);
-        this.bestScore.style.fontSize = headerHeight*(width > 720 ? 0.15 : 0.12);
+        this.bestScore.style.fontSize = headerHeight*(width > 720 ? 0.2 : 0.2);
         this.bestScore.y = 0;
-
+  
         this.curScore.x = +(headerWidth*0.1) ;
-        this.curScore.style.fontSize = headerHeight* (width > 720 ? 0.15 : 0.12);
+        this.curScore.style.fontSize = headerHeight* (width > 720 ? 0.2 : 0.2);
         this.curScore.y = 0;
     }
     public layoutBody(width: number, height: number): void {
@@ -257,6 +277,7 @@ export class GameScene extends BaseScene{
 
         this.worldMap.x = this.bodyBg.x;
         this.worldMap.y = this.bodyBg.y;
+
 
     }
     public layoutFooter(width: number, height: number): void {
@@ -278,8 +299,8 @@ export class GameScene extends BaseScene{
     public getScoreLabel(totalLines: number): string | null {
         if (totalLines === 1) return "text";
         if (totalLines === 2) return "cool";
-        if (totalLines === 3) return "excellent";
-        if (totalLines >= 4) return "great";
+        if (totalLines === 3) return "great";
+        if (totalLines >= 4) return "excellent";
         return null;
     }
     public settingOverlay(): void {
@@ -288,7 +309,13 @@ export class GameScene extends BaseScene{
         this.settingContainer.eventMode = "static";
         this.settingContainer.sortableChildren = true;
     
-        this.settingBgr = new Sprite(Assets.get("bgr_settings"));
+        this.settingBgr = new NineSliceSprite({
+            texture: Assets.get("bgr_settings"),
+            leftWidth: 130,
+            rightWidth: 130,
+            topHeight: 130,
+            bottomHeight: 130,
+        });
         this.settingBgr.anchor.set(0.5);
         this.settingBgr.alpha = 0.9;
     
@@ -373,8 +400,8 @@ export class GameScene extends BaseScene{
 
         this.settingBgr.x = centerX;
         this.settingBgr.y = centerY;
-        this.settingBgr.width = width * 0.9;
-        this.settingBgr.height = height * 0.9;
+        this.settingBgr.width = width * 0.95;
+        this.settingBgr.height = height * 0.95;
     
         this.btnContinue.x = centerX;
         this.btnContinue.y = centerY - height*0.2;
@@ -436,38 +463,10 @@ export class GameScene extends BaseScene{
         this.updateBlockLayoutPosition();
         const blocks = this.pickBlockContainer.children.filter(c => c instanceof Blocks) as Blocks[];
         for (let i = 0; i < blocks.length; i++) {
-            blocks[i].x = this.blockX + i * (this.shapeSize + this.blockSpacing);
-            blocks[i].y = this.blockY;
             blocks[i].reSize(this.shapeSize);
+            blocks[i].x = this.blockX + i * (this.shapeSize + this.blockSpacing);
+            blocks[i].y = this.footerBg.y - blocks[i].shapeSize * blocks[i].getShape().length / 2;
         }
-    
-        // Update setting overlay
-        // if (this.settingContainer) {
-        //     const bgr = this.settingContainer.children[0] as Sprite;
-        //     bgr.x = width / 2;
-        //     bgr.y = height / 2;
-        //     bgr.height = height * 0.95;
-        //  //   bgr.width  = 
-    
-        //     const continueBtn = this.settingContainer.children[1] as Sprite;
-        //     continueBtn.x = bgr.x;
-        //     continueBtn.y = bgr.y - 100;
-    
-        //     const spacing = width * 0.1;
-    
-        //     const btnReplay = this.settingContainer.children[2] as Sprite;
-        //     btnReplay.x = bgr.x - spacing;
-        //     btnReplay.y = bgr.y + 100;
-    
-        //     const btnSoundOff = this.settingContainer.children[3] as Sprite;
-        //     btnSoundOff.x = bgr.x + spacing;
-        //     btnSoundOff.y = bgr.y + 100;
-    
-        //     const btnSoundOn = this.settingContainer.children[4] as Sprite;
-        //     btnSoundOn.x = bgr.x + spacing;
-        //     btnSoundOn.y = bgr.y + 100;
-        // }
-      //  this.settingOverlay()
     }
 
     public updateBlockLayoutPosition(): void {
@@ -475,8 +474,7 @@ export class GameScene extends BaseScene{
         const space = Math.max(this.footerBg.width * 0.2, 10);
         this.blockCount = 3;
         const totalWidth = this.blockCount * this.shapeSize + (this.blockCount - 1) * space;
-
-        this.blockX = this.footerBg.x - totalWidth/2;
+        this.blockX = this.footerBg.x - totalWidth/2;        
         this.blockY = this.footerBg.y - this.footerBg.height/3;
         this.blockSpacing = space;
     }

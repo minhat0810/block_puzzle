@@ -529,8 +529,8 @@ export class BlocksPick {
         anim.anchor.set(0.5);
 
         const localPos = this.containerWM.toGlobal({ x: cell.x, y: cell.y });
-        anim.width = this.containerWM.blockSize*1.2;
-        anim.height = this.containerWM.blockSize*1.5;
+        // anim.width = this.containerWM.blockSize*1.2;
+        // anim.height = this.containerWM.blockSize*1.5;
         anim.x = localPos.x;
         anim.y = localPos.y;
         this.app.stage.addChild(anim);

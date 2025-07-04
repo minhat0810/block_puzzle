@@ -229,10 +229,7 @@ export class GameScene extends BaseScene{
             const texture = textureList[Math.floor(Math.random() * textureList.length)];
             this.block = new Blocks(matrix, texture, this.shapeSize);
             this.block.x = this.blockX + i*(this.shapeSize+this.blockSpacing);
-            this.block.y = this.footerBg.y - this.block.shapeSize * this.block.getShape().length / 2;
-
-            console.log(this.block.getShape().length);
-            
+            this.block.y = this.footerBg.y - this.block.shapeSize * this.block.getShape().length / 2;  
             this.pickBlockContainer.addChild(this.block);
             this.blockPickManager.addBlock(this.block); 
         }

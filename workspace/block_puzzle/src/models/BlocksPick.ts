@@ -520,7 +520,7 @@ export class BlocksPick {
 
     this.cellsToDes.forEach((cell, index) => {
       const one = this.cellsToDes.length <= 8;
-      const delay = index * (one ? 50 : 10);
+      const delay = index * (one ? 30 : 10);
 
       setTimeout(() => {
         const anim = new AnimatedSprite(baseFrames);
@@ -529,8 +529,8 @@ export class BlocksPick {
         anim.anchor.set(0.5);
 
         const localPos = this.containerWM.toGlobal({ x: cell.x, y: cell.y });
-        // anim.width = this.containerWM.blockSize*;
-        // anim.height = this.containerWM.blockSize*2.5;
+        anim.width = this.containerWM.blockSize*1.2;
+        anim.height = this.containerWM.blockSize*1.5;
         anim.x = localPos.x;
         anim.y = localPos.y;
         this.app.stage.addChild(anim);

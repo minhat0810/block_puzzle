@@ -26,6 +26,7 @@ export class LoseScene extends BaseScene{
     private scoreText       !: Text;
     private titleNewBest    !: Sprite;
     private bestScoreText   !: Text;
+    private btnReplayPulseTicker?: (delta: number) => void;
 
     private maxWidth : number = 0;
     private maxHeight : number = 0;
@@ -213,8 +214,8 @@ export class LoseScene extends BaseScene{
         this.loseS.width = w * (isMobile ? 0.5 :  0.3);
         this.loseS.height = h * 0.08;
     
-        this.titleScore.width = w* (isMobile? 0.15: 0.07);
-        this.titleScore.height = h*( h > 800 ? 0.04: 0.07);
+        this.titleScore.width = w* (isMobile? 0.15: 0.05);
+        this.titleScore.height = h*( h > 800 ? 0.15: 0.03);
         this.titleScore.position.set(w / 2, this.loseS.y + this.loseS.height + spacing);
    
         this.bgrScore.setSize(blockW, blockH);
@@ -230,8 +231,8 @@ export class LoseScene extends BaseScene{
         this.wheel.position.set(this.star_off.x -iconSize*0.4, this.star_off.y - iconSize * 0.4);
     
         
-    
-        this.titleBestScore.setSize( w* (isMobile? 0.15: 0.07),h*( h > 800 ? 0.04: 0.07));
+        this.titleBestScore.width = w* (isMobile? 0.15: 0.05);
+        this.titleBestScore.height = h*( h > 800 ? 0.15: 0.03);
         this.titleBestScore.position.set(w / 2, this.bgrScore.y + blockH + spacing * 1.2);
     
 
@@ -243,8 +244,8 @@ export class LoseScene extends BaseScene{
     
        
     
-        this.titleNewBest.width = w * ((isMobile? 0.2 : 0.15));
-        this.titleNewBest.height = h * (isMobile? 0.035: 0.07);
+        this.titleNewBest.width = w * ((isMobile? 0.15 : 0.1));
+        this.titleNewBest.height = h*( h > 800 ? 0.03: 0.03);
         this.titleNewBest.position.set(w / 2, this.bgrScore.y + blockH + spacing * 1.2);
     
     

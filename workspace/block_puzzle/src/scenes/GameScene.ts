@@ -62,7 +62,7 @@ export class GameScene extends BaseScene{
     public btnReplay            !: Sprite;
     public btnSoundOn           !: Sprite;
     public btnSoundOff          !: Sprite;
-
+    private ratio                : number = 0;
 
 
     constructor(){
@@ -77,7 +77,7 @@ export class GameScene extends BaseScene{
         this.background.position.set(0, 0);
         this.background.width = this.appWidth;
         this.background.height = this.appHeight;
-    
+        this.ratio = this.appWidth/this.appHeight;
         const offsetYTop = -this.appHeight * 0.4;
         const offsetYBottom = -this.appHeight * 0.01;
     
@@ -134,8 +134,8 @@ export class GameScene extends BaseScene{
         // Header background
         this.headerBg = new NineSliceSprite({
             texture: Assets.get("top_enless"),
-            leftWidth: 130,
-            rightWidth: 130,
+            leftWidth: 140,
+            rightWidth: 140,
             topHeight: 140,
             bottomHeight: 140,
         });
@@ -308,10 +308,10 @@ export class GameScene extends BaseScene{
     
         this.settingBgr = new NineSliceSprite({
             texture: Assets.get("bgr_settings"),
-            leftWidth: 130,
-            rightWidth: 130,
-            topHeight: 130,
-            bottomHeight: 130,
+            leftWidth: 500,
+            rightWidth: 500,
+            topHeight: 500,
+            bottomHeight: 500,
         });
         this.settingBgr.anchor.set(0.5);
         this.settingBgr.alpha = 0.9;
@@ -436,7 +436,7 @@ export class GameScene extends BaseScene{
         this.appHeight = height;
 
         const offsetYTop = -height * 0.4;
-
+       // const ratio = width / height;
         // Background
         this.background.width = this.appWidth;
         this.background.height = this.appHeight;

@@ -167,8 +167,8 @@ export class Effects {
       tile1.alpha = 0;
       gsap.to(tile1, {
         alpha: 1,
-        scaleX: 1,
-        scaleY: 1,
+        // scaleX: 1,
+        // scaleY: 1,
         delay: delay,
         duration: 0.5,
         ease: "back.out(1.7)"

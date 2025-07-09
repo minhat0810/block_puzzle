@@ -114,7 +114,7 @@ export class BlocksPick {
     this.selectedBlock.position.set(Math.round(localPos.x-this.offsetX) , Math.round(localPos.y-this.offsetY));
     
     const snapPos = this.getSnapBlockPos(Math.round(this.selectedBlock.x),Math.round( this.selectedBlock.y));
-    if (snapPos) {
+    if (snapPos ) {
         if (!this.snapPreview) {
             this.snapPreview = new Blocks(block.getShape(), block['texture'], this.containerWM.blockSize);
             this.snapPreview.alpha = 0.3;
@@ -124,11 +124,13 @@ export class BlocksPick {
           this.highlight(snapPos.row, snapPos.col, this.selectedBlock);
           this.lastSnapRow = snapPos.row;
           this.lastSnapCol = snapPos.col;
+          
         }
         
         this.snapPreview.position.set(snapPos.x, snapPos.y);
     } else {
-        if (this.snapPreview && this.snapPreview.parent) {
+       if (this.snapPreview && this.snapPreview.parent) {
+            this.resetHighlights();
             this.container.removeChild(this.snapPreview);
             this.snapPreview.destroy();
             this.snapPreview = null;
@@ -655,7 +657,7 @@ export class BlocksPick {
     const grid = this.containerWM.blockGrid;
     const highlightTexture = Assets.get("block_highlight");
 
-    const numHighlights = 15
+    const numHighlights = 15;
     let highlighted = 0;
     let delay = 0;
     while(highlighted < numHighlights){
@@ -675,7 +677,7 @@ export class BlocksPick {
           setTimeout(() => {
             tile.texture = highlightTexture;
           }, delay);
-          delay += 200;
+          delay += 100;
           highlighted++;
         }
       }
